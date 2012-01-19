@@ -1,12 +1,15 @@
 package codng.hgx;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.PipedInputStream;
+import java.io.PipedOutputStream;
 import java.io.PrintWriter;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -17,6 +20,7 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.Callable;
 
 public class Main {
 	
@@ -93,8 +97,8 @@ public class Main {
 			final List<ChangeSet> changeSets = new ArrayList<>();
 			final List<Entry> entries = new ArrayList<>();
 			for(String line = br.readLine();
-					line != null;
-					line = br.readLine()) {
+				line != null;
+				line = br.readLine()) {
 				if(line.trim().isEmpty()) {
 					// End of section
 					changeSets.add(ChangeSet.parse(entries));
@@ -103,7 +107,7 @@ public class Main {
 					entries.add(Entry.parse(line));
 				}
 			}
-			
+
 			//Link parents
 			for (int i = 0; i < changeSets.size()-1; i++) {
 				final ChangeSet current = changeSets.get(i);
@@ -192,10 +196,40 @@ public class Main {
 		}
 	}
 
-	public static void main(String[] args) throws IOException, ParseException {
-		final InputStream is = new FileInputStream(args[0]);
-		final List<ChangeSet> changeSets = ChangeSet.loadFrom(is);
-		dotify(changeSets, 1000, "log.dot", "case16146");
+	public static void main(String[] args) throws Exception {
+		final String branch = Command.executeSimple("hg", "branch").trim();
+		final PipedInputStream snk = new PipedInputStream() {
+			@Override
+			public int read() throws IOException {
+				try {
+					return super.read();
+				} catch (IOException e) {
+					if(e.getMessage().equals("Write end dead")) {
+						return -1;
+					}
+					throw e;
+				}
+			}
+		};
+		Callable<Integer> exitCode = new Command("hg", "log", "--branch", branch)
+				.redirectError(System.err)
+				.redirectOutput(new PipedOutputStream(snk))
+				.start();
+		
+		final List<ChangeSet> changeSets = ChangeSet.loadFrom(snk);
+
+		System.out.println("exitCode.call() = " + exitCode.call());
+		final File dotFile = File.createTempFile("log", "dot");
+		final File pdfFile = File.createTempFile("log", "pdf");
+		dotify(changeSets, 1000, dotFile.getAbsolutePath(), null);
+		
+		Command.executeSimple("dot", "-Tpdf", dotFile.getAbsolutePath(), "-o", pdfFile.getAbsolutePath());
+		dotFile.delete();
+		Command.executeSimple("open", "-W", pdfFile.getAbsolutePath());
+		pdfFile.delete();
+	}
+
+	private static void treeify(List<ChangeSet> changeSets) {
 		final List<Cell> unresolved = new ArrayList<>();
 		int count = 200;
 		for (ChangeSet changeSet : changeSets) {

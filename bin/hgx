@@ -1,0 +1,7 @@
+#!/bin/bash
+
+#Arcane incantation to get the bin directory (even if we were called through a symlink)
+BIN_DIR=$(dirname $(file="$0"; while [ -L $file ]; do file=$(readlink "$file"); done; echo $file))
+JAR_FILE="$BIN_DIR/../target/hgx-1.0-SNAPSHOT.jar"
+
+java -cp $JAR_FILE codng.hgx.Main
