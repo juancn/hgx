@@ -1,48 +1,74 @@
 package codng.hgx;
 
+import java.awt.Color;
 import java.awt.Frame;
 import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.text.ParseException;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
-public class TreeBuilder {
-	private final List<ChangeSet> changeSets;
+public class TreeBuilder 
+		implements Iterable<Row>
+{
+	private final Iterable<ChangeSet> changeSets;
 
-	public TreeBuilder(List<ChangeSet> changeSets) {
+	public TreeBuilder(Iterable<ChangeSet> changeSets) {
 		this.changeSets = changeSets;
 	}
 
-	List<Row> build() {
-		List<Row> result = new ArrayList<>();
-		Row lastRow = new Row(changeSets.get(0));
-		for (ChangeSet changeSet : changeSets.subList(1, changeSets.size())) {
-			result.add(lastRow);
-			lastRow = lastRow.next(changeSet);
-		}
-		return result;
+	@Override
+	public Iterator<Row> iterator() {
+		return new Iterator<Row>() {
+			final Iterator<ChangeSet> chIt = changeSets.iterator();
+			Row lastRow;
+			@Override
+			public boolean hasNext() {
+				return chIt.hasNext();
+			}
+
+			@Override
+			public Row next() {
+				if(lastRow == null) {
+					lastRow = new Row(chIt.next());
+				} else {
+					lastRow = lastRow.next(chIt.next());
+				}
+				return lastRow; 
+			}
+
+			@Override
+			public void remove() {
+				throw new UnsupportedOperationException();
+			}
+		};
 	}
 
 	public static void main(String[] args) throws IOException, ParseException {
-//		TreeBuilder tb = new TreeBuilder(ChangeSet.loadFrom(new FileInputStream("/Users/juancn/history.log")));
+//		final TreeBuilder tb = new TreeBuilder(ChangeSet.loadFrom(new FileInputStream("/Users/juancn/history.log")));
 		final TreeBuilder tb = new TreeBuilder(ChangeSet.loadFrom(new FileInputStream("/Users/juancn/history-case16146.log")));
-		final List<Row> rows = tb.build();
-		for (Row row : rows) {
-			System.out.println(row);
-		}
+//		for (Row row : tb) {
+//			System.out.println(row);
+//		}
 		
 		Frame f = new Frame("test") {
 			@Override
-			public void update(Graphics g) {
-				final int cellSize = 10;
-				final int yoff = 20;
-				final int xoff = 40;
+			public void paint(Graphics g1) {
+				final Graphics2D g = (Graphics2D) g1;
+				final int cellSize = 16;
+				final int yoff = 30;
+				final int xoff = 20;
 				Row lastRow = null;
-				for (int i = 0; i < rows.size(); i++) {
-					Row row = rows.get(i);
+				g.setBackground(Color.WHITE);
+				g.clearRect(0,0,getWidth(), getHeight());
+
+				int i = 0;
+				for (Row row : tb) {
 					int y = i * cellSize + yoff;
+					if(y > getHeight()) break;
 					for (int j = 0; j < row.cells.size(); j++) {
 						int x = j * cellSize + xoff;
 						Cell cell = row.cells.get(j);
@@ -59,8 +85,12 @@ public class TreeBuilder {
 							}
 						}
 					}
+					
+					g.drawString(String.format("%s (%s) %s", row.changeSet.id, row.changeSet.user, row.changeSet.summary), row.cells.size() * cellSize + xoff + cellSize, y + cellSize/2 + g.getFont().getSize()/2);
 					lastRow = row;
+					i++;
 				}
+				
 			}
 		};
 		f.setSize(640, 800);

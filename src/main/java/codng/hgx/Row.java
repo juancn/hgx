@@ -2,7 +2,10 @@ package codng.hgx;
 
 import java.util.ArrayList;
 import java.util.Formatter;
+import java.util.HashMap;
+import java.util.IdentityHashMap;
 import java.util.List;
+import java.util.Map;
 
 class Row {
 	public final ChangeSet changeSet;
@@ -19,32 +22,14 @@ class Row {
 	
 	Row next(ChangeSet changeSet) {
 		final List<Cell> result = new ArrayList<>();
-
 		Cell branch = null;
 		for (Cell cell : cells) {
 			if(cell.id.equals(this.changeSet.id)) {
 				for (Id parent : this.changeSet.parents) {
-					Id id = parent;
-					if (id.equals(changeSet.id) && branch == null) {
-						branch = new Cell(id, cell);
-						result.add(branch);
-					} else if(id.equals(changeSet.id) && branch != null) {
-						branch.addChild(cell);
-					} else {
-						result.add(new Cell(id, cell));
-					}
+					branch = updateBranch(changeSet, result, branch, cell, parent);
 				}
 			} else {
-				Id id = cell.id;
-				if (id.equals(changeSet.id) && branch == null) {
-					branch = new Cell(id, cell);
-					result.add(branch);
-				} else if(id.equals(changeSet.id) && branch != null) {
-					branch.addChild(cell);
-				} else {
-					result.add(new Cell(id, cell));
-				}
-						
+				branch = updateBranch(changeSet, result, branch, cell, cell.id);
 			}
 		}
 		
@@ -52,9 +37,52 @@ class Row {
 			result.add(new Cell(changeSet.id, null));
 		}
 
-		
+		// Group similar
+		Map<Id, Integer> counts = new HashMap<>();
+		for (Cell cell : result) {
+			Integer count = counts.get(cell.id);
+			if(count == null) {
+				count = 1;
+			} else {
+				++count;
+			}
+			counts.put(cell.id, count);
+		}
 
+//		for (Map.Entry<Id, Integer> entry : counts.entrySet()) {
+//			if(entry.getValue() > 1) {
+//				Id id = entry.getKey();
+//				int first = -1;
+//				for (int i = 0; i < result.size(); i++) {
+//					Cell cell = result.get(i);
+//					if(cell.id.equals(id)) {
+//						if(first == -1) {
+//							first = i;
+//						} else {
+//							final Cell left = result.get(i - 1);
+//							if(!cell.id.equals(left.id)){
+//								result.set(i, left);
+//								result.set(i-1, cell);
+//							}
+//						}
+//					}
+//				}
+//			}
+//		}
+		
 		return new Row(changeSet, result);
+	}
+
+	private Cell updateBranch(ChangeSet changeSet, List<Cell> result, Cell branch, Cell cell, Id id) {
+		if (id.equals(changeSet.id) && branch == null) {
+			branch = new Cell(id, cell);
+			result.add(branch);
+		} else if(id.equals(changeSet.id) && branch != null) {
+			branch.addChild(cell);
+		} else {
+			result.add(new Cell(id, cell));
+		}
+		return branch;
 	}
 
 	@Override
@@ -64,13 +92,16 @@ class Row {
 				.format("%s", cells)
 				.toString();
 	}
-
 	
+	private IdentityHashMap<Cell, Integer> indexes;
 	public int cellIndex(Cell child) {
-		for (int i = 0; i < cells.size(); i++) {
-			Cell cell = cells.get(i);
-			if(cell == child) return i;
+		if( indexes == null ) {
+			indexes = new IdentityHashMap<>();
+			for (int i = 0; i < cells.size(); i++) {
+				indexes.put(cells.get(i), i);
+			}
 		}
-		return -1;
+		Integer index = indexes.get(child);
+		return index == null?-1:index;
 	}
 }
