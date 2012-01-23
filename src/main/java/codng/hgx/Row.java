@@ -7,7 +7,7 @@ import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 
-class Row {
+public class Row {
 	public final ChangeSet changeSet;
 	public final List<Cell> cells;
 

@@ -7,9 +7,7 @@ import java.awt.Graphics2D;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.text.ParseException;
-import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.List;
 
 public class TreeBuilder 
 		implements Iterable<Row>
@@ -50,10 +48,7 @@ public class TreeBuilder
 	public static void main(String[] args) throws IOException, ParseException {
 //		final TreeBuilder tb = new TreeBuilder(ChangeSet.loadFrom(new FileInputStream("/Users/juancn/history.log")));
 		final TreeBuilder tb = new TreeBuilder(ChangeSet.loadFrom(new FileInputStream("/Users/juancn/history-case16146.log")));
-//		for (Row row : tb) {
-//			System.out.println(row);
-//		}
-		
+
 		Frame f = new Frame("test") {
 			@Override
 			public void paint(Graphics g1) {
@@ -69,28 +64,32 @@ public class TreeBuilder
 				for (Row row : tb) {
 					int y = i * cellSize + yoff;
 					if(y > getHeight()) break;
-					for (int j = 0; j < row.cells.size(); j++) {
-						int x = j * cellSize + xoff;
-						Cell cell = row.cells.get(j);
-						if(cell.id.equals(row.changeSet.id)) {
-							g.fillOval(x+cellSize/4, y+cellSize/4, cellSize/2, cellSize/2);
-						} 
-						
-						if(lastRow != null) {
-							for (Cell child : cell.children) {
-								final int prev = lastRow.cellIndex(child);
-								if(prev != -1) {
-									g.drawLine(x+cellSize/2, y+cellSize/2, (prev * cellSize + xoff) + cellSize/2, y - cellSize + cellSize/2);
-								}
-							}
-						}
-					}
-					
-					g.drawString(String.format("%s (%s) %s", row.changeSet.id, row.changeSet.user, row.changeSet.summary), row.cells.size() * cellSize + xoff + cellSize, y + cellSize/2 + g.getFont().getSize()/2);
+					drawRow(g, cellSize, xoff, y, lastRow, row);
 					lastRow = row;
 					i++;
 				}
 				
+			}
+
+			private void drawRow(Graphics2D g, int cellSize, int xoff, int yoff, Row previousRow, Row currentRow) {
+				for (int j = 0; j < currentRow.cells.size(); j++) {
+					int x = j * cellSize + xoff;
+					Cell cell = currentRow.cells.get(j);
+					if(cell.id.equals(currentRow.changeSet.id)) {
+						g.fillOval(x+cellSize/4, yoff +cellSize/4, cellSize/2, cellSize/2);
+					} 
+					
+					if(previousRow != null) {
+						for (Cell child : cell.children) {
+							final int prev = previousRow.cellIndex(child);
+							if(prev != -1) {
+								g.drawLine(x+cellSize/2, yoff +cellSize/2, (prev * cellSize + xoff) + cellSize/2, yoff - cellSize + cellSize/2);
+							}
+						}
+					}
+				}
+
+				g.drawString(String.format("%s (%s) %s", currentRow.changeSet.id, currentRow.changeSet.user, currentRow.changeSet.summary), currentRow.cells.size() * cellSize + xoff + cellSize, yoff + cellSize/2 + g.getFont().getSize()/2);
 			}
 		};
 		f.setSize(640, 800);

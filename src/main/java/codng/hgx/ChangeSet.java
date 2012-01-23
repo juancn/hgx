@@ -11,7 +11,7 @@ import java.util.Date;
 import java.util.Formatter;
 import java.util.List;
 
-class ChangeSet {
+public class ChangeSet {
 	public final Id id;
 	public final String branch;
 	public final String tag;
@@ -42,7 +42,7 @@ class ChangeSet {
 				.toString();
 	}
 
-	static List<ChangeSet> loadFrom(InputStream is) throws IOException, ParseException {
+	public static List<ChangeSet> loadFrom(InputStream is) throws IOException, ParseException {
 		final BufferedReader br = new BufferedReader(new InputStreamReader(is));
 		final List<ChangeSet> changeSets = new ArrayList<>();
 		final List<Entry> entries = new ArrayList<>();

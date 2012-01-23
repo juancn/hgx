@@ -3,13 +3,15 @@ package codng.hgx;
 import java.util.ArrayList;
 import java.util.List;
 
-class Cell {
+public class Cell {
 	public final Id id;
 	public final List<Cell> children = new ArrayList<>();
 
 	Cell(Id id, Cell child) {
 		this.id = id;
-		addChild(child);
+		if (child != null) {
+			addChild(child);
+		}
 	}
 
 	@Override

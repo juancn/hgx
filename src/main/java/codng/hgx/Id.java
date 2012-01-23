@@ -1,6 +1,6 @@
 package codng.hgx;
 
-class Id {
+public class Id {
 	public final long seqNo; 
 	public final String hash;
 
