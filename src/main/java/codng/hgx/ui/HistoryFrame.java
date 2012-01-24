@@ -55,6 +55,7 @@ public class HistoryFrame
 
 	private static final String RULER = "<hr style=\"border-top-width: 0px; border-right-width: 0px; border-bottom-width: 0px; border-left-width: 0px; border-style: initial; border-color: initial; height: 1px; margin-top: 0px; margin-right: 8px; margin-bottom: 0px; margin-left: 8px; background-color: rgb(222, 222, 222); clear: both; font-family: 'Lucida Grande';\">";
 	private static final File CACHE_DIR = new File(System.getProperty("user.home"), ".hgx");
+	private static final String DE_EMPHASIZE = "<span style=\"color: rgb(160,160,160);\">%s</span>\n";
 	private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 	private JTable historyTable;
 	private JSplitPane split;
@@ -82,7 +83,7 @@ public class HistoryFrame
 							g.setBackground(Color.WHITE);
 							g.setColor(Color.BLACK);
 						}
-						g.clearRect(0,0,getWidth(), getHeight());
+						g.clearRect(0, 0, getWidth(), getHeight());
 						g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
 						int bullet = drawLines(g, cellSize, 0, 0, rowIndex > 0 ? (Row) historyTableModel.getValueAt(rowIndex - 1, columnIndex) : null, row);
@@ -96,20 +97,20 @@ public class HistoryFrame
 					private int drawLines(Graphics2D g, int cellSize, int xoff, int yoff, Row previousRow, Row currentRow) {
 						final int halfCell = cellSize / 2;
 						int bulletOff = -1;
-						
+
 						for (int j = 0; j < currentRow.cells.size(); j++) {
 							int x = cellOffset(halfCell, xoff, j);
 							Cell cell = currentRow.cells.get(j);
 							if (cell.id.equals(currentRow.changeSet.id)) {
 								assert bulletOff == -1;
-								bulletOff = x;								
+								bulletOff = x;
 							}
 
 							if (previousRow != null) {
 								for (Cell child : cell.children) {
 									final int prev = previousRow.cellIndex(child);
 									if (prev != -1) {
-										g.drawLine(x + halfCell, yoff + getHeight()/2, cellOffset(halfCell, xoff, prev) + halfCell, yoff - getHeight()/2);
+										g.drawLine(x + halfCell, yoff + getHeight() / 2, cellOffset(halfCell, xoff, prev) + halfCell, yoff - getHeight() / 2);
 									}
 								}
 							}
@@ -119,22 +120,23 @@ public class HistoryFrame
 
 					private void drawSummary(Graphics2D g, int cellSize, int xoff, int yoff, Row currentRow) {
 						final int halfCell = cellSize / 2;
-						if(isSelected) g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_OFF);
+						if (isSelected)
+							g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_OFF);
 						g.drawString(currentRow.changeSet.summary, cellOffset(halfCell, xoff, currentRow.cells.size()) + cellSize, yoff + halfCell + g.getFont().getSize() / 2);
 					}
 
 					private void drawBullet(Graphics2D g, int cellSize, int yoff, int xoff) {
 						final int halfCell = cellSize / 2;
 						final int quarterCell = halfCell / 2;
-						g.fillOval(xoff + quarterCell + 1, yoff + getHeight()/2 - quarterCell, halfCell, halfCell);
+						g.fillOval(xoff + quarterCell + 1, yoff + getHeight() / 2 - quarterCell, halfCell, halfCell);
 						final Color color = g.getColor();
 						g.setColor(g.getBackground());
-						g.fillOval(xoff + quarterCell + 2, yoff + getHeight()/2 - quarterCell + 1, halfCell - 2, halfCell - 2);
+						g.fillOval(xoff + quarterCell + 2, yoff + getHeight() / 2 - quarterCell + 1, halfCell - 2, halfCell - 2);
 						g.setColor(color);
 					}
 
 					private int cellOffset(int halfCell, int xoff, int column) {
-						return column * (halfCell ) + xoff;
+						return column * (halfCell) + xoff;
 					}
 				};
 				return renderer;
@@ -168,10 +170,10 @@ public class HistoryFrame
 			@Override
 			public void valueChanged(ListSelectionEvent e) {
 				if (!e.getValueIsAdjusting()) {
-					if(future != null) {
+					if (future != null) {
 						future.cancel(false);
 					}
-					final AtomicReference<Row> rowRef = new AtomicReference<>((Row)historyTableModel.getValueAt(historyTable.getSelectedRow(), 0));
+					final AtomicReference<Row> rowRef = new AtomicReference<>((Row) historyTableModel.getValueAt(historyTable.getSelectedRow(), 0));
 
 					future = scheduler.schedule(new Runnable() {
 						@Override
@@ -282,24 +284,26 @@ public class HistoryFrame
 		final StringReader sr = new StringReader(diff);
 		final BufferedReader br = new BufferedReader(sr);
 		try {
-			pw.println("<pre>");
+			pw.println("<pre style=\"font-family: Monaco; font-size: 10px;\">");
 			int oldStart = -1, newStart = -1;
 			for(String rawLine = br.readLine(); rawLine != null; rawLine = br.readLine())  {
 				final String line = htmlEscape(rawLine);
 
 				if(rawLine.startsWith("diff")) {
-					pw.println(line);
+					pw.printf(DE_EMPHASIZE, line);
+				} else if(rawLine.startsWith("new file mode")) {
+					pw.printf(DE_EMPHASIZE, line);
 				} else if(rawLine.startsWith("+++")) {
-					pw.println(line);
+					pw.printf(DE_EMPHASIZE, line);
 				} else if(rawLine.startsWith("---")) {
-					pw.println(line);
+					pw.printf(DE_EMPHASIZE, line);
 				} else if(rawLine.startsWith("@@")) {
 					final Matcher matcher = HUNK_PATTERN.matcher(rawLine);
 					if(matcher.matches()) {
 						oldStart = Integer.parseInt(matcher.group(1));
 						newStart = Integer.parseInt(matcher.group(3));
 					}
-					pw.printf("<span style=\"color: rgb(160,160,160);\">%s</span>\n", line);
+					pw.printf(DE_EMPHASIZE, line);
 				} else if(rawLine.startsWith("-")) {
 					pw.printf("<span style=\"font-size: 9px;\">(%4d|    )</span><span style=\"background: rgb(255,144,144);\">%s</span>\n", oldStart, line);
 					++oldStart;
