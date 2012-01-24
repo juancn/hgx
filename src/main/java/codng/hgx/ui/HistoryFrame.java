@@ -187,7 +187,7 @@ public class HistoryFrame
 							}
 
 						}
-					}, 300, TimeUnit.MILLISECONDS);
+					}, 200, TimeUnit.MILLISECONDS);
 
 				}
 			}
