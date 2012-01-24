@@ -35,6 +35,8 @@ public class HistoryFrame
 		extends JFrame 
 {
 
+	private static final String RULER = "<hr style=\"border-top-width: 0px; border-right-width: 0px; border-bottom-width: 0px; border-left-width: 0px; border-style: initial; border-color: initial; height: 1px; margin-top: 0px; margin-right: 8px; margin-bottom: 0px; margin-left: 8px; background-color: rgb(222, 222, 222); clear: both; font-family: 'Lucida Grande';\">";
+
 	public HistoryFrame(String title, Iterator<Row> historyGen) throws HeadlessException {
 		super(title);
 
@@ -122,6 +124,8 @@ public class HistoryFrame
 		final JSplitPane split = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
 		split.setTopComponent(tableScrollPane);
 		final JLabel detail = new JLabel();
+		detail.setVerticalAlignment(JLabel.TOP);
+		
 		split.setBottomComponent(new JScrollPane(detail));
 		getContentPane().add(split);
 		historyTable.getColumnModel().getColumn(0).setPreferredWidth(800);
@@ -149,13 +153,16 @@ public class HistoryFrame
 		final Formatter fmt = new Formatter();
 		fmt.format("<html>");
 		fmt.format("<body style=\"word-wrap: break-word;\">");
-		fmt.format("<table>");
+		fmt.format("<table id=\"commit_header\" style=\"font-size: 12px; font-family: 'Lucida Grande';\">");
+		fmt.format("<tbody>");
 		fmt.format(HEADER_ROW, "SHA:", row.changeSet.id);
 		fmt.format(HEADER_ROW, "Author:", row.changeSet.user);
 		fmt.format(HEADER_ROW, "Date:", row.changeSet.date);
 		fmt.format(HEADER_ROW, "Summary:", row.changeSet.summary);
 		fmt.format(HEADER_ROW, "Parent:", row.changeSet.parents);
+		fmt.format("</tbody>");
 		fmt.format("</table>");
+		fmt.format(RULER);
 
 		String diff;
 		try {
@@ -192,13 +199,14 @@ public class HistoryFrame
 		
 	}
 	
-	private static final String HEADER_ROW = "<tr><td syle=\"width: 6em;" +
-			" color: rgb(127, 127, 127); " +
-			"text-align: " +
-			"right; " +
-			"font-weight: bold; " +
-			"padding-left: 5px;\">%s</td>" +
-			"<td style=\"padding-left: 5px;\">%s</td></tr>";
+	private static final String HEADER_ROW = "<tr>\n" +
+			"<td class=\"property_name\" style=\"width: 6em; color: rgb(127, 127, 127); text-align: right; font-weight: bold; padding-left: 5px;\">\n" +
+			"%s\n" +
+			"</td>\n" +
+			"<td id=\"commitID\" style=\"padding-left: 5px;\">\n" +
+			"%s\n" +
+			"</td>\n" +
+			"</tr>";
 
 	
 }
