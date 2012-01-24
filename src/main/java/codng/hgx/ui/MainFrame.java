@@ -5,7 +5,6 @@ import codng.hgx.ChangeSet;
 import codng.hgx.Row;
 import codng.hgx.TreeBuilder;
 
-import javax.swing.BorderFactory;
 import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -18,9 +17,9 @@ import java.awt.Component;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.HeadlessException;
-import java.awt.Rectangle;
 import java.awt.RenderingHints;
-import java.io.FileInputStream;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.util.Iterator;
 
 public class MainFrame 
@@ -89,10 +88,19 @@ public class MainFrame
 		split.setBottomComponent(new JLabel());
 		getContentPane().add(split);
 		historyTable.getColumnModel().getColumn(0).setPreferredWidth(800);
+		
+		addWindowListener(new WindowAdapter() {
+			@Override
+			public void windowClosing(WindowEvent e) {
+				System.exit(0);
+			}
+		});
 	}
 
 	public static void main(String[] args) throws Exception {
-		final TreeBuilder tb = new TreeBuilder(ChangeSet.loadFrom(new FileInputStream("/Users/juancn/history.log")));
+		
+		final TreeBuilder tb = new TreeBuilder(ChangeSet.loadFromCurrentDirectory());
+//		final TreeBuilder tb = new TreeBuilder(ChangeSet.loadFrom(new FileInputStream("/Users/juancn/history.log")));
 //		final TreeBuilder tb = new TreeBuilder(ChangeSet.loadFrom(new FileInputStream("/Users/juancn/history-case16146.log")));
 
 		final MainFrame blah = new MainFrame("blah", tb.iterator());

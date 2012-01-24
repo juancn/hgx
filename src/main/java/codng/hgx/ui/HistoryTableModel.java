@@ -20,17 +20,20 @@ public class HistoryTableModel implements TableModel {
 	public HistoryTableModel(Iterator<Row> historyIt) {
 		this.historyIt = historyIt;
 		//Load the first 100 rows
-		getRow(100);
+		loadUpTo(100);
 	}
 
 	private Row getRow(int index) {
+		loadUpTo(index);
+		return history.get(index);
+	}
+
+	private void loadUpTo(int index) {
 		while (index >= history.size() && historyIt.hasNext()) {
 			history.add(historyIt.next());
 		}
-		
-		return history.get(index);
 	}
-	
+
 	@Override
 	public int getRowCount() {
 		if(historyIt.hasNext()) {

@@ -4,12 +4,15 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.PipedInputStream;
+import java.io.PipedOutputStream;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Formatter;
 import java.util.List;
+import java.util.concurrent.Callable;
 
 public class ChangeSet {
 	public final Id id;
@@ -27,6 +30,32 @@ public class ChangeSet {
 		this.user = user;
 		this.date = date;
 		this.summary = summary;
+	}
+
+	public static List<ChangeSet> loadFromCurrentDirectory() throws Exception {
+		final String branch = Command.executeSimple("hg", "branch").trim();
+		final PipedInputStream snk = new PipedInputStream() {
+			@Override
+			public int read() throws IOException {
+				try {
+					return super.read();
+				} catch (IOException e) {
+					if(e.getMessage().equals("Write end dead")) {
+						return -1;
+					}
+					throw e;
+				}
+			}
+		};
+		
+		Callable<Integer> exitCode = new Command("hg", "log", "--branch", branch)
+				.redirectError(System.err)
+				.redirectOutput(new PipedOutputStream(snk))
+				.start();
+
+		final List<ChangeSet> changeSets = loadFrom(snk);
+		System.out.println("exitCode.call() = " + exitCode.call());
+		return changeSets;
 	}
 
 	@Override

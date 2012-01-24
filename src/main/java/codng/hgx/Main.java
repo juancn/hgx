@@ -3,17 +3,13 @@ package codng.hgx;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.PipedInputStream;
-import java.io.PipedOutputStream;
 import java.io.PrintWriter;
 import java.util.List;
-import java.util.concurrent.Callable;
 
 public class Main {
 
 	public static void main(String[] args) throws Exception {
-		final List<ChangeSet> changeSets = loadFromCurrentDirectory();
+		final List<ChangeSet> changeSets = ChangeSet.loadFromCurrentDirectory();
 		final File dotFile = File.createTempFile("log", "dot");
 		final File pdfFile = File.createTempFile("log", "pdf");
 		dotify(changeSets, 1000, dotFile.getAbsolutePath(), null);
@@ -22,32 +18,6 @@ public class Main {
 		dotFile.delete();
 		Command.executeSimple("open", "-W", pdfFile.getAbsolutePath());
 		pdfFile.delete();
-	}
-
-	private static List<ChangeSet> loadFromCurrentDirectory() throws Exception {
-		final String branch = Command.executeSimple("hg", "branch").trim();
-		final PipedInputStream snk = new PipedInputStream() {
-			@Override
-			public int read() throws IOException {
-				try {
-					return super.read();
-				} catch (IOException e) {
-					if(e.getMessage().equals("Write end dead")) {
-						return -1;
-					}
-					throw e;
-				}
-			}
-		};
-		
-		Callable<Integer> exitCode = new Command("hg", "log", "--branch", branch)
-				.redirectError(System.err)
-				.redirectOutput(new PipedOutputStream(snk))
-				.start();
-
-		final List<ChangeSet> changeSets = ChangeSet.loadFrom(snk);
-		System.out.println("exitCode.call() = " + exitCode.call());
-		return changeSets;
 	}
 
 	private static void dotify(List<ChangeSet> changeSets, int count, String filename, String branch) throws FileNotFoundException {
