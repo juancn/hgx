@@ -9,12 +9,12 @@ import java.io.IOException;
 import java.text.ParseException;
 import java.util.Iterator;
 
-public class TreeBuilder 
+public class History 
 		implements Iterable<Row>
 {
 	private final Iterable<ChangeSet> changeSets;
 
-	public TreeBuilder(Iterable<ChangeSet> changeSets) {
+	public History(Iterable<ChangeSet> changeSets) {
 		this.changeSets = changeSets;
 	}
 
@@ -47,7 +47,7 @@ public class TreeBuilder
 
 	public static void main(String[] args) throws IOException, ParseException {
 //		final TreeBuilder tb = new TreeBuilder(ChangeSet.loadFrom(new FileInputStream("/Users/juancn/history.log")));
-		final TreeBuilder tb = new TreeBuilder(ChangeSet.loadFrom(new FileInputStream("/Users/juancn/history-case16146.log")));
+		final History tb = new History(ChangeSet.loadFrom(new FileInputStream("/Users/juancn/history-case16146.log")));
 
 		Frame f = new Frame("test") {
 			@Override

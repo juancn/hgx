@@ -34,19 +34,7 @@ public class ChangeSet {
 
 	public static List<ChangeSet> loadFromCurrentDirectory() throws Exception {
 		final String branch = Command.executeSimple("hg", "branch").trim();
-		final PipedInputStream snk = new PipedInputStream() {
-			@Override
-			public int read() throws IOException {
-				try {
-					return super.read();
-				} catch (IOException e) {
-					if(e.getMessage().equals("Write end dead")) {
-						return -1;
-					}
-					throw e;
-				}
-			}
-		};
+		final PipedInputStream snk = new QuietPipedInputStream();
 		
 		Callable<Integer> exitCode = new Command("hg", "log", "--branch", branch)
 				.redirectError(System.err)
@@ -54,7 +42,7 @@ public class ChangeSet {
 				.start();
 
 		final List<ChangeSet> changeSets = loadFrom(snk);
-		System.out.println("exitCode.call() = " + exitCode.call());
+		System.out.println("exit code: " + exitCode.call());
 		return changeSets;
 	}
 
@@ -149,4 +137,18 @@ public class ChangeSet {
 
 	/** Thu Jan 12 09:54:28 2012 -0800 */
 	private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("EEE MMM d HH:mm:ss yyyy Z");
+
+	private static class QuietPipedInputStream extends PipedInputStream {
+		@Override
+		public int read() throws IOException {
+			try {
+				return super.read();
+			} catch (IOException e) {
+				if(e.getMessage().equals("Write end dead")) {
+					return -1;
+				}
+				throw e;
+			}
+		}
+	}
 }
