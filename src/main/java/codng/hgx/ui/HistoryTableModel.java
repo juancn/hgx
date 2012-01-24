@@ -15,7 +15,6 @@ public class HistoryTableModel implements TableModel {
 
 	private static final String[] columnNames = { "Subject", "Author", "Date"}; 
 	private static final Class[] columnClasses = { Row.class, String.class, Date.class };
-	private int rowCount;
 
 	public HistoryTableModel(Iterator<Row> historyIt) {
 		this.historyIt = historyIt;

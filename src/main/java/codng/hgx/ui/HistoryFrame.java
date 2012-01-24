@@ -13,7 +13,7 @@ import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
 import javax.swing.JTable;
 import javax.swing.ListSelectionModel;
-import javax.swing.Timer;
+import javax.swing.SwingUtilities;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.table.TableCellRenderer;
@@ -38,9 +38,14 @@ import java.io.PrintWriter;
 import java.io.Reader;
 import java.io.StringReader;
 import java.io.StringWriter;
+import java.lang.reflect.InvocationTargetException;
 import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class HistoryFrame 
 		extends JFrame 
@@ -48,6 +53,7 @@ public class HistoryFrame
 
 	private static final String RULER = "<hr style=\"border-top-width: 0px; border-right-width: 0px; border-bottom-width: 0px; border-left-width: 0px; border-style: initial; border-color: initial; height: 1px; margin-top: 0px; margin-right: 8px; margin-bottom: 0px; margin-left: 8px; background-color: rgb(222, 222, 222); clear: both; font-family: 'Lucida Grande';\">";
 	private static final File CACHE_DIR = new File(System.getProperty("user.home"), ".hgx");
+	private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 
 	public HistoryFrame(String title, Iterator<Row> historyGen) throws HeadlessException {
 		super(title);
@@ -151,13 +157,38 @@ public class HistoryFrame
 			}
 		});
 		
+		
 		historyTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
+			public ScheduledFuture<?> future;
+
 			@Override
 			public void valueChanged(ListSelectionEvent e) {
 				if (!e.getValueIsAdjusting()) {
-					final Row row = (Row)historyTableModel.getValueAt(historyTable.getSelectedRow(), 0);
-					detail.setText(buildDetail(row));
-					detail.setCaretPosition(0);
+					if(future != null) {
+						future.cancel(false);
+					}
+					final AtomicReference<Row> rowRef = new AtomicReference<>((Row)historyTableModel.getValueAt(historyTable.getSelectedRow(), 0));
+
+					future = scheduler.schedule(new Runnable() {
+						@Override
+						public void run() {
+							final String text = buildDetail(rowRef.get());
+							try {
+								SwingUtilities.invokeAndWait(new Runnable() {
+									@Override
+									public void run() {
+										detail.setText(text);
+										detail.setCaretPosition(0);
+									}
+								});
+							} catch (InterruptedException | InvocationTargetException e) {
+								// Safe to ignore
+								e.printStackTrace();
+							}
+
+						}
+					}, 300, TimeUnit.MILLISECONDS);
+
 				}
 			}
 		});
