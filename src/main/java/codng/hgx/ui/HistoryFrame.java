@@ -3,18 +3,17 @@ package codng.hgx.ui;
 import codng.hgx.Cell;
 import codng.hgx.ChangeSet;
 import codng.hgx.Command;
-import codng.hgx.Row;
 import codng.hgx.History;
+import codng.hgx.Row;
 
 import javax.swing.JComponent;
 import javax.swing.JEditorPane;
 import javax.swing.JFrame;
-import javax.swing.JLabel;
 import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
 import javax.swing.JTable;
-import javax.swing.JTextArea;
 import javax.swing.ListSelectionModel;
+import javax.swing.Timer;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.table.TableCellRenderer;
@@ -26,17 +25,29 @@ import java.awt.HeadlessException;
 import java.awt.RenderingHints;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.Formatter;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
+import java.io.Reader;
+import java.io.StringReader;
+import java.io.StringWriter;
 import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.ScheduledExecutorService;
 
 public class HistoryFrame 
 		extends JFrame 
 {
 
 	private static final String RULER = "<hr style=\"border-top-width: 0px; border-right-width: 0px; border-bottom-width: 0px; border-left-width: 0px; border-style: initial; border-color: initial; height: 1px; margin-top: 0px; margin-right: 8px; margin-bottom: 0px; margin-left: 8px; background-color: rgb(222, 222, 222); clear: both; font-family: 'Lucida Grande';\">";
+	private static final File CACHE_DIR = new File(System.getProperty("user.home"), ".hgx");
 
 	public HistoryFrame(String title, Iterator<Row> historyGen) throws HeadlessException {
 		super(title);
@@ -144,41 +155,109 @@ public class HistoryFrame
 			@Override
 			public void valueChanged(ListSelectionEvent e) {
 				if (!e.getValueIsAdjusting()) {
-					final int firstIndex = e.getFirstIndex();
-					final Row row = (Row)historyTableModel.getValueAt(firstIndex, 0);
+					final Row row = (Row)historyTableModel.getValueAt(historyTable.getSelectedRow(), 0);
 					detail.setText(buildDetail(row));
+					detail.setCaretPosition(0);
 				}
 			}
 		});
 	}
 
 	private String buildDetail(Row row) {
-		final Formatter fmt = new Formatter();
-		fmt.format("<html>");
-		fmt.format("<body style=\"word-wrap: break-word;\">");
-		fmt.format("<table id=\"commit_header\" style=\"font-size: 11px; font-family: 'Lucida Grande';\">");
-		fmt.format("<tbody>");
-		fmt.format(HEADER_ROW, "SHA:", row.changeSet.id);
-		fmt.format(HEADER_ROW, "Author:", row.changeSet.user);
-		fmt.format(HEADER_ROW, "Date:", row.changeSet.date);
-		fmt.format(HEADER_ROW, "Summary:", "<b>" + htmlEscape(row.changeSet.summary) + "</b>");
-		fmt.format(HEADER_ROW, "Parent:", row.changeSet.parents);
-		fmt.format("</tbody>");
-		fmt.format("</table>");
-		fmt.format(RULER);
+		final StringWriter sw = new StringWriter();
+		final PrintWriter pw = new PrintWriter(sw, true);
+		pw.print("<html>");
+		pw.print("<body style=\"word-wrap: break-word;\">");
+		pw.print("<table id=\"commit_header\" style=\"font-size: 11px; font-family: 'Lucida Grande';\">");
+		pw.print("<tbody>");
+		pw.printf(HEADER_ROW, "SHA:", row.changeSet.id);
+		pw.printf(HEADER_ROW, "Author:", row.changeSet.user);
+		pw.printf(HEADER_ROW, "Date:", row.changeSet.date);
+		pw.printf(HEADER_ROW, "Summary:", "<b>" + htmlEscape(row.changeSet.summary) + "</b>");
+		pw.printf(HEADER_ROW, "Parent:", row.changeSet.parents);
+		pw.print("</tbody>");
+		pw.print("</table>");
+		pw.print(RULER);
 
-		String diff;
 		try {
-			diff = htmlEscape(Command.executeSimple("hg", "diff", "-r", row.changeSet.id.hash, "-r", row.changeSet.parents.get(0).hash));
+			colorize(pw, loadDiff(row));
 		} catch (IOException e) {
 			e.printStackTrace();
-			diff = e.toString();
+			pw.printf("<pre>%s</pre>", e.getMessage());
 		}
 
-		fmt.format("<pre>%s</pre>", diff);
-		fmt.format("</body>");
-		fmt.format("</html>");
-		return fmt.toString();
+		pw.print("</body>");
+		pw.print("</html>");
+		pw.close();
+		return sw.toString();
+	}
+
+	private String loadDiff(Row row) throws IOException {
+		String key = row.changeSet.parents.get(0).hash + "-" + row.changeSet.id.hash;
+		File file = new File(CACHE_DIR, key);
+		final String diff;
+		if(file.exists()) {
+			diff = read(file);
+		} else {
+			diff = Command.executeSimple("hg", "diff", "-r", row.changeSet.parents.get(0).hash, "-r", row.changeSet.id.hash);
+			write(diff, file);
+		}
+		return diff;
+	}
+
+	private void write(String diff, File file) throws IOException {
+		final File parentFile = file.getParentFile();
+		if(!parentFile.exists()) {
+			parentFile.mkdirs();
+		}
+		
+		final File temp = File.createTempFile("diff", "tmp", parentFile);
+		final FileOutputStream fos = new FileOutputStream(temp);
+		final OutputStreamWriter out = new OutputStreamWriter(new BufferedOutputStream(fos), "UTF-8");
+		out.write(diff);
+		out.close();;
+		temp.renameTo(file);
+	}
+
+	private String read(File file) throws IOException {
+		final BufferedInputStream inputStream = new BufferedInputStream(new FileInputStream(file));
+		final Reader in = new BufferedReader(new InputStreamReader(inputStream, "UTF-8"));
+		final StringWriter out = new StringWriter();
+		final char[] buffer = new char[512];
+		int read;
+		while ((read = in.read(buffer)) != -1) {
+			out.write(buffer, 0, read);
+		}
+		in.close();
+		return out.toString();
+	}
+
+	private void colorize(PrintWriter pw,  String diff) {
+		final StringReader sr = new StringReader(diff);
+		final BufferedReader br = new BufferedReader(sr);
+		try {
+			pw.println("<pre>");
+			for(String rawLine = br.readLine(); rawLine != null; rawLine = br.readLine())  {
+				final String line = htmlEscape(rawLine);
+
+				if(rawLine.startsWith("+++")) {
+					pw.println(line);
+				} else if(rawLine.startsWith("---")) {
+					pw.println(line);
+				} else if(rawLine.startsWith("@@")) {
+					pw.println(line.replace("@@", "<span style=\"color: rgb(255, 0, 0);\">@@</span>"));
+				} else if(rawLine.startsWith("-")) {
+					pw.printf("<span style=\"background: rgb(255,144,144);\">%s</span>\n", line);
+				} else if(rawLine.startsWith("+")) {
+					pw.printf("<span style=\"background: rgb(144,255,144);\">%s</span>\n", line);
+				} else {
+					pw.println(line);
+				}
+			}
+			pw.println("</pre>");
+		} catch (IOException e) {
+			throw new Error("This shouldn't happen!");
+		}
 	}
 
 	private String htmlEscape(String s) {

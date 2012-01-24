@@ -34,8 +34,8 @@ public class Command
 
     public Command(final String... command)
     {
-        this.command = new ArrayList<String>();
-        environment = new HashMap<String, String>();
+        this.command = new ArrayList<>();
+        environment = new HashMap<>();
         this.command.addAll(Arrays.asList(command));
     }
 
