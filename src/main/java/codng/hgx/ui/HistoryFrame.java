@@ -13,6 +13,7 @@ import javax.swing.JLabel;
 import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
 import javax.swing.JTable;
+import javax.swing.JTextArea;
 import javax.swing.ListSelectionModel;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
@@ -123,8 +124,10 @@ public class HistoryFrame
 		JScrollPane tableScrollPane = new JScrollPane(historyTable);
 		final JSplitPane split = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
 		split.setTopComponent(tableScrollPane);
-		final JLabel detail = new JLabel();
-		detail.setVerticalAlignment(JLabel.TOP);
+		
+		final JEditorPane detail = new JEditorPane();
+		detail.setContentType("text/html");
+		detail.setEditable(false);
 		
 		split.setBottomComponent(new JScrollPane(detail));
 		getContentPane().add(split);
@@ -153,12 +156,12 @@ public class HistoryFrame
 		final Formatter fmt = new Formatter();
 		fmt.format("<html>");
 		fmt.format("<body style=\"word-wrap: break-word;\">");
-		fmt.format("<table id=\"commit_header\" style=\"font-size: 12px; font-family: 'Lucida Grande';\">");
+		fmt.format("<table id=\"commit_header\" style=\"font-size: 11px; font-family: 'Lucida Grande';\">");
 		fmt.format("<tbody>");
 		fmt.format(HEADER_ROW, "SHA:", row.changeSet.id);
 		fmt.format(HEADER_ROW, "Author:", row.changeSet.user);
 		fmt.format(HEADER_ROW, "Date:", row.changeSet.date);
-		fmt.format(HEADER_ROW, "Summary:", row.changeSet.summary);
+		fmt.format(HEADER_ROW, "Summary:", "<b>" + htmlEscape(row.changeSet.summary) + "</b>");
 		fmt.format(HEADER_ROW, "Parent:", row.changeSet.parents);
 		fmt.format("</tbody>");
 		fmt.format("</table>");
