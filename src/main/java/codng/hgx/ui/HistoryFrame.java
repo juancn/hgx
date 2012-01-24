@@ -46,6 +46,8 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class HistoryFrame 
 		extends JFrame 
@@ -54,12 +56,14 @@ public class HistoryFrame
 	private static final String RULER = "<hr style=\"border-top-width: 0px; border-right-width: 0px; border-bottom-width: 0px; border-left-width: 0px; border-style: initial; border-color: initial; height: 1px; margin-top: 0px; margin-right: 8px; margin-bottom: 0px; margin-left: 8px; background-color: rgb(222, 222, 222); clear: both; font-family: 'Lucida Grande';\">";
 	private static final File CACHE_DIR = new File(System.getProperty("user.home"), ".hgx");
 	private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+	private JTable historyTable;
+	private JSplitPane split;
 
 	public HistoryFrame(String title, Iterator<Row> historyGen) throws HeadlessException {
 		super(title);
 
 		final HistoryTableModel historyTableModel = new HistoryTableModel(historyGen);
-		final JTable historyTable = new JTable(historyTableModel);
+		historyTable = new JTable(historyTableModel);
 		
 		historyTable.getColumnModel().getColumn(0).setCellRenderer(new TableCellRenderer() {
 			@Override
@@ -139,17 +143,17 @@ public class HistoryFrame
 		historyTable.setRowMargin(0);
 		historyTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 		JScrollPane tableScrollPane = new JScrollPane(historyTable);
-		final JSplitPane split = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
-		split.setTopComponent(tableScrollPane);
-		
+
+
 		final JEditorPane detail = new JEditorPane();
 		detail.setContentType("text/html");
 		detail.setEditable(false);
 		
+		split = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
+		split.setTopComponent(tableScrollPane);
 		split.setBottomComponent(new JScrollPane(detail));
 		getContentPane().add(split);
-		historyTable.getColumnModel().getColumn(0).setPreferredWidth(800);
-		
+
 		addWindowListener(new WindowAdapter() {
 			@Override
 			public void windowClosing(WindowEvent e) {
@@ -194,12 +198,23 @@ public class HistoryFrame
 		});
 	}
 
+	private void initSize() {
+		// Pick some pleasing proportions 
+		final double golden = 1.61803399;
+		setSize((int) (900*golden),900);
+		setVisible(true);
+		setLocationRelativeTo(null);
+
+		historyTable.getColumnModel().getColumn(0).setPreferredWidth(800);
+		split.setDividerLocation(1-(1/golden));
+	}
+
 	private String buildDetail(Row row) {
 		final StringWriter sw = new StringWriter();
 		final PrintWriter pw = new PrintWriter(sw, true);
 		pw.print("<html>");
 		pw.print("<body style=\"word-wrap: break-word;\">");
-		pw.print("<table id=\"commit_header\" style=\"font-size: 11px; font-family: 'Lucida Grande';\">");
+		pw.print("<table id=\"commit_header\" style=\"font-size: 10px; font-family: 'Lucida Grande';\">");
 		pw.print("<tbody>");
 		pw.printf(HEADER_ROW, "SHA:", row.changeSet.id);
 		pw.printf(HEADER_ROW, "Author:", row.changeSet.user);
@@ -230,7 +245,7 @@ public class HistoryFrame
 		if(file.exists()) {
 			diff = read(file);
 		} else {
-			diff = Command.executeSimple("hg", "diff", "-r", row.changeSet.parents.get(0).hash, "-r", row.changeSet.id.hash);
+			diff = Command.executeSimple("hg", "diff", "--git","-r", row.changeSet.parents.get(0).hash, "-r", row.changeSet.id.hash);
 			write(diff, file);
 		}
 		return diff;
@@ -268,21 +283,32 @@ public class HistoryFrame
 		final BufferedReader br = new BufferedReader(sr);
 		try {
 			pw.println("<pre>");
+			int oldStart = -1, newStart = -1;
 			for(String rawLine = br.readLine(); rawLine != null; rawLine = br.readLine())  {
 				final String line = htmlEscape(rawLine);
 
-				if(rawLine.startsWith("+++")) {
+				if(rawLine.startsWith("diff")) {
+					pw.println(line);
+				} else if(rawLine.startsWith("+++")) {
 					pw.println(line);
 				} else if(rawLine.startsWith("---")) {
 					pw.println(line);
 				} else if(rawLine.startsWith("@@")) {
-					pw.println(line.replace("@@", "<span style=\"color: rgb(255, 0, 0);\">@@</span>"));
+					final Matcher matcher = HUNK_PATTERN.matcher(rawLine);
+					if(matcher.matches()) {
+						oldStart = Integer.parseInt(matcher.group(1));
+						newStart = Integer.parseInt(matcher.group(1));
+					}
+					pw.printf("<span style=\"color: rgb(160,160,160);\">%s</span>\n", line);
 				} else if(rawLine.startsWith("-")) {
-					pw.printf("<span style=\"background: rgb(255,144,144);\">%s</span>\n", line);
+					pw.printf("<span style=\"font-size: 9px;\">(%4d|    )</span><span style=\"background: rgb(255,144,144);\">%s</span>\n", oldStart, line);
+					++oldStart;
 				} else if(rawLine.startsWith("+")) {
-					pw.printf("<span style=\"background: rgb(144,255,144);\">%s</span>\n", line);
+					pw.printf("<span style=\"font-size: 9px;\">(    |%4d)</span><span style=\"background: rgb(144,255,144);\">%s</span>\n", newStart, line);
+					++newStart;
 				} else {
-					pw.println(line);
+					pw.printf("<span style=\"font-size: 9px;\">(%4d|%4d)</span>%s\n",oldStart, newStart, line);
+					++oldStart; ++newStart;
 				}
 			}
 			pw.println("</pre>");
@@ -299,7 +325,7 @@ public class HistoryFrame
 		
 		final List<ChangeSet> changeSets;
 		if (args.length == 1 &&  "--debug".equals(args[0])) { 
-			changeSets = ChangeSet.loadFrom(new FileInputStream("/Users/juancn/history.log"));
+			changeSets = ChangeSet.loadFrom(new FileInputStream("/Users/juancn/history-case16146.log"));
 		} else {
 			changeSets = ChangeSet.loadFromCurrentDirectory();
 		}
@@ -307,10 +333,11 @@ public class HistoryFrame
 //		final TreeBuilder tb = new TreeBuilder(ChangeSet.loadFrom(new FileInputStream("/Users/juancn/history-case16146.log")));
 
 		final HistoryFrame blah = new HistoryFrame("blah", tb.iterator());
-		blah.setSize(1024,800);
-		blah.setVisible(true);
+		blah.initSize();
 		
 	}
+	
+	private static Pattern HUNK_PATTERN = Pattern.compile("@@ -(\\d+),(\\d+) \\+(\\d+),(\\d+) @@");
 	
 	private static final String HEADER_ROW = "<tr>\n" +
 			"<td class=\"property_name\" style=\"width: 6em; color: rgb(127, 127, 127); text-align: right; font-weight: bold; padding-left: 5px;\">\n" +
