@@ -297,7 +297,7 @@ public class HistoryFrame
 					final Matcher matcher = HUNK_PATTERN.matcher(rawLine);
 					if(matcher.matches()) {
 						oldStart = Integer.parseInt(matcher.group(1));
-						newStart = Integer.parseInt(matcher.group(1));
+						newStart = Integer.parseInt(matcher.group(3));
 					}
 					pw.printf("<span style=\"color: rgb(160,160,160);\">%s</span>\n", line);
 				} else if(rawLine.startsWith("-")) {
