@@ -14,6 +14,8 @@ import javax.swing.JSplitPane;
 import javax.swing.JTable;
 import javax.swing.ListSelectionModel;
 import javax.swing.SwingUtilities;
+import javax.swing.event.HyperlinkEvent;
+import javax.swing.event.HyperlinkListener;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.table.TableCellRenderer;
@@ -286,13 +288,14 @@ public class HistoryFrame
 		try {
 			int oldStart = -1, newStart = -1;
 			boolean firstDiff = true;
+			String file = null;
 			for(String rawLine = br.readLine(); rawLine != null; rawLine = br.readLine())  {
 				final String line = htmlEscape(rawLine);
 
 				if(rawLine.startsWith("diff")) {
 					final Matcher matcher = DIFF_PATTERN.matcher(line);
 					if(!matcher.matches()) throw new IllegalArgumentException("Malformed diff");
-					final String file = matcher.group(2);
+					file = matcher.group(2);
 					if (firstDiff) {
 						firstDiff = false;
 					} else {
@@ -313,13 +316,16 @@ public class HistoryFrame
 					newStart = Integer.parseInt(matcher.group(3));
 					pw.printf(DE_EMPHASIZE, line);
 				} else if(rawLine.startsWith("-")) {
-					pw.printf("<span style=\"font-size: 8px;\">(%4d|    )</span><span style=\"background: rgb(255,144,144);\">%s</span>\n", oldStart, line);
+					final String colorized = file != null && file.endsWith(".java") ? JavaColorizer.colorizeLine(rawLine) : line;
+					pw.printf("<span style=\"font-size: 8px;\">(%4d|    )</span><span style=\"background: rgb(255,238,238);\">%s</span>\n", oldStart, colorized);
 					++oldStart;
 				} else if(rawLine.startsWith("+")) {
-					pw.printf("<span style=\"font-size: 8px;\">(    |%4d)</span><span style=\"background: rgb(144,255,144);\">%s</span>\n", newStart, line);
+					final String colorized = file != null && file.endsWith(".java") ? JavaColorizer.colorizeLine(rawLine) : line;
+					pw.printf("<span style=\"font-size: 8px;\">(    |%4d)</span><span style=\"background: rgb(221,255,221);\">%s</span>\n", newStart, colorized);
 					++newStart;
 				} else {
-					pw.printf("<span style=\"font-size: 8px;\">(%4d|%4d)</span>%s\n",oldStart, newStart, line);
+					final String colorized = file != null && file.endsWith(".java") ? JavaColorizer.colorizeLine(rawLine) : line;
+					pw.printf("<span style=\"font-size: 8px;\">(%4d|%4d)</span>%s\n",oldStart, newStart, colorized);
 					++oldStart; ++newStart;
 				}
 			}
@@ -329,8 +335,8 @@ public class HistoryFrame
 		}
 	}
 
-	private String htmlEscape(String s) {
-		return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
+	public static String htmlEscape(CharSequence s) {
+		return s.toString().replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
 	}
 
 	public static void main(String[] args) throws Exception {
@@ -342,8 +348,6 @@ public class HistoryFrame
 			changeSets = ChangeSet.loadFromCurrentDirectory();
 		}
 		final History tb = new History(changeSets);
-//		final TreeBuilder tb = new TreeBuilder(ChangeSet.loadFrom(new FileInputStream("/Users/juancn/history-case16146.log")));
-
 		final HistoryFrame blah = new HistoryFrame("blah", tb.iterator());
 		blah.initSize();
 		
