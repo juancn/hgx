@@ -14,8 +14,6 @@ import javax.swing.JSplitPane;
 import javax.swing.JTable;
 import javax.swing.ListSelectionModel;
 import javax.swing.SwingUtilities;
-import javax.swing.event.HyperlinkEvent;
-import javax.swing.event.HyperlinkListener;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.table.TableCellRenderer;
@@ -40,7 +38,6 @@ import java.io.PrintWriter;
 import java.io.Reader;
 import java.io.StringReader;
 import java.io.StringWriter;
-import java.lang.reflect.InvocationTargetException;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.Executors;
@@ -223,7 +220,7 @@ public class HistoryFrame
 		pw.printf(HEADER_ROW, "SHA:", row.changeSet.id);
 		pw.printf(HEADER_ROW, "Author:", row.changeSet.user);
 		pw.printf(HEADER_ROW, "Date:", row.changeSet.date);
-		pw.printf(HEADER_ROW, "Summary:", "<b>" + htmlEscape(row.changeSet.summary) + "</b>");
+		pw.printf(HEADER_ROW, "Summary:", "<b>" + Colorizer.htmlEscape(row.changeSet.summary) + "</b>");
 		pw.printf(HEADER_ROW, "Parent:", row.changeSet.parents);
 		pw.print("</tbody>");
 		pw.print("</table>");
@@ -288,14 +285,14 @@ public class HistoryFrame
 		try {
 			int oldStart = -1, newStart = -1;
 			boolean firstDiff = true;
-			String file = null;
+			Colorizer colorizer = Colorizer.PLAIN;
 			for(String rawLine = br.readLine(); rawLine != null; rawLine = br.readLine())  {
-				final String line = htmlEscape(rawLine);
+				final String line = Colorizer.htmlEscape(rawLine);
 
 				if(rawLine.startsWith("diff")) {
 					final Matcher matcher = DIFF_PATTERN.matcher(line);
 					if(!matcher.matches()) throw new IllegalArgumentException("Malformed diff");
-					file = matcher.group(2);
+					final String file = matcher.group(2);
 					if (firstDiff) {
 						firstDiff = false;
 					} else {
@@ -303,6 +300,11 @@ public class HistoryFrame
 					}
 					pw.printf("<p style=\"margin-top: 5px; margin-bottom: 5px; margin-left: 10px; margin-right: 10px; font-size: 12px; background: rgb(220,220,250); font-family: 'Lucida Grande';\">%s</p>", file);
 					pw.print("<pre style=\"margin-left: 10px; font-family: Monaco; font-size: 9px;\">");
+					if(file.endsWith(".java")) {
+						colorizer = new JavaColorizer();
+					} else {
+						colorizer = Colorizer.PLAIN;
+					}
 				} else if(rawLine.startsWith("new file mode")) {
 					pw.printf(DE_EMPHASIZE, line);
 				} else if(rawLine.startsWith("+++")) {
@@ -316,16 +318,13 @@ public class HistoryFrame
 					newStart = Integer.parseInt(matcher.group(3));
 					pw.printf(DE_EMPHASIZE, line);
 				} else if(rawLine.startsWith("-")) {
-					final String colorized = file != null && file.endsWith(".java") ? JavaColorizer.colorizeLine(rawLine) : line;
-					pw.printf("<span style=\"font-size: 8px;\">(%4d|    )</span><span style=\"background: rgb(255,238,238);\">%s</span>\n", oldStart, colorized);
+					pw.printf("<span style=\"font-size: 8px;\">(%4d|    )</span><span style=\"background: rgb(255,238,238);\">%s</span>\n", oldStart, colorizer.colorizeLine(rawLine));
 					++oldStart;
 				} else if(rawLine.startsWith("+")) {
-					final String colorized = file != null && file.endsWith(".java") ? JavaColorizer.colorizeLine(rawLine) : line;
-					pw.printf("<span style=\"font-size: 8px;\">(    |%4d)</span><span style=\"background: rgb(221,255,221);\">%s</span>\n", newStart, colorized);
+					pw.printf("<span style=\"font-size: 8px;\">(    |%4d)</span><span style=\"background: rgb(221,255,221);\">%s</span>\n", newStart, colorizer.colorizeLine(rawLine));
 					++newStart;
 				} else {
-					final String colorized = file != null && file.endsWith(".java") ? JavaColorizer.colorizeLine(rawLine) : line;
-					pw.printf("<span style=\"font-size: 8px;\">(%4d|%4d)</span><span>%s</span>\n",oldStart, newStart, colorized);
+					pw.printf("<span style=\"font-size: 8px;\">(%4d|%4d)</span><span>%s</span>\n",oldStart, newStart, colorizer.colorizeLine(rawLine));
 					++oldStart; ++newStart;
 				}
 			}
@@ -333,10 +332,6 @@ public class HistoryFrame
 		} catch (IOException e) {
 			throw new Error("This shouldn't happen!");
 		}
-	}
-
-	public static String htmlEscape(CharSequence s) {
-		return s.toString().replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
 	}
 
 	public static void main(String[] args) throws Exception {
