@@ -54,7 +54,7 @@ public class JavaLexer
             } else {
                 TokenType ttype = parseMultichar(c);
                 if(ttype == null) {
-                    throw new ParseException("unexpected character: " + c, -1);
+                    token = makeToken(TokenType.ERROR);
                 } else {
                     token = makeToken(ttype);
                 }
@@ -67,7 +67,7 @@ public class JavaLexer
     private JavaToken parseString() throws ParseException
     {
         char c = read();
-        while(c != '"') {
+        loop: while(c != '"') {
             switch(c) {
             case '\\':
                 c = read();
@@ -96,7 +96,9 @@ public class JavaLexer
             case '\n':
             case '\r':
             case EOF:
-                throw new ParseException("Unterminated string constant", -1);
+//                throw new ParseException("Unterminated string constant", -1);
+				// Just terminate it
+                break loop;
             }
 			c = read();
         }

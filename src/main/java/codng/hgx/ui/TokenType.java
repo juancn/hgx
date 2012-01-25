@@ -101,5 +101,6 @@ public enum TokenType {
     VOID,
     VOLATILE,
     WHILE,
+    ERROR,
 	;
 }

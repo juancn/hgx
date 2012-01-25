@@ -325,7 +325,7 @@ public class HistoryFrame
 					++newStart;
 				} else {
 					final String colorized = file != null && file.endsWith(".java") ? JavaColorizer.colorizeLine(rawLine) : line;
-					pw.printf("<span style=\"font-size: 8px;\">(%4d|%4d)</span>%s\n",oldStart, newStart, colorized);
+					pw.printf("<span style=\"font-size: 8px;\">(%4d|%4d)</span><span>%s</span>\n",oldStart, newStart, colorized);
 					++oldStart; ++newStart;
 				}
 			}

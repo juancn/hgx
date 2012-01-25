@@ -12,7 +12,11 @@ public class JavaColorizer {
 			for(JavaToken last = null, current = lexer.next();
 				current.getType() != TokenType.EOF;
 				last = current, current = lexer.next()) {
-				if(last != null) sb.append(HistoryFrame.htmlEscape(line.substring(last.getEndOffset(), current.getStartOffset())));
+				if (last == null) {
+					sb.append(HistoryFrame.htmlEscape(line.substring(0, current.getStartOffset())));
+				} else {
+					sb.append(HistoryFrame.htmlEscape(line.substring(last.getEndOffset(), current.getStartOffset())));
+				}
 				switch (current.getType()) {
 					case ML_COMMENT:
 					case SL_COMMENT:
@@ -45,7 +49,8 @@ public class JavaColorizer {
 				}
 			}
 		} catch (ParseException e) {
-			return line;
+			e.printStackTrace();
+			return HistoryFrame.htmlEscape(line);
 		}
 		return sb.toString();
 	}
