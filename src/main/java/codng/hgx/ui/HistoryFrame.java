@@ -55,7 +55,7 @@ public class HistoryFrame
 
 	private static final String RULER = "<hr style=\"border-top-width: 0px; border-right-width: 0px; border-bottom-width: 0px; border-left-width: 0px; border-style: initial; border-color: initial; height: 1px; margin-top: 0px; margin-right: 8px; margin-bottom: 0px; margin-left: 8px; background-color: rgb(222, 222, 222); clear: both; font-family: 'Lucida Grande';\">";
 	private static final File CACHE_DIR = new File(System.getProperty("user.home"), ".hgx");
-	private static final String DE_EMPHASIZE = "<span style=\"color: rgb(160,160,160);\">%s</span>\n";
+	private static final String DE_EMPHASIZE = "<span style=\"font-size: 8px; color: rgb(160,160,160);\">%s</span>\n";
 	private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 	private JTable historyTable;
 	private JSplitPane split;
@@ -178,8 +178,8 @@ public class HistoryFrame
 					future = scheduler.schedule(new Runnable() {
 						@Override
 						public void run() {
-							final String text = buildDetail(rowRef.get());
 							try {
+								final String text = buildDetail(rowRef.get());
 								SwingUtilities.invokeAndWait(new Runnable() {
 									@Override
 									public void run() {
@@ -187,8 +187,8 @@ public class HistoryFrame
 										detail.setCaretPosition(0);
 									}
 								});
-							} catch (InterruptedException | InvocationTargetException e) {
-								// Safe to ignore
+							} catch (Exception e) {
+								// Safe to ignore, but log
 								e.printStackTrace();
 							}
 
@@ -284,34 +284,42 @@ public class HistoryFrame
 		final StringReader sr = new StringReader(diff);
 		final BufferedReader br = new BufferedReader(sr);
 		try {
-			pw.println("<pre style=\"font-family: Monaco; font-size: 10px;\">");
 			int oldStart = -1, newStart = -1;
+			boolean firstDiff = true;
 			for(String rawLine = br.readLine(); rawLine != null; rawLine = br.readLine())  {
 				final String line = htmlEscape(rawLine);
 
 				if(rawLine.startsWith("diff")) {
-					pw.printf(DE_EMPHASIZE, line);
+					final Matcher matcher = DIFF_PATTERN.matcher(line);
+					if(!matcher.matches()) throw new IllegalArgumentException("Malformed diff");
+					final String file = matcher.group(2);
+					if (firstDiff) {
+						firstDiff = false;
+					} else {
+						pw.print("</pre>");
+					}
+					pw.printf("<p style=\"margin-top: 5px; margin-left: 10px; margin-bottom: 5px; font-size: 12px; background: rgb(220,220,250); font-family: 'Lucida Grande';\">%s</p>", file);
+					pw.print("<pre style=\"margin-left: 10px; font-family: Monaco; font-size: 9px;\">");
 				} else if(rawLine.startsWith("new file mode")) {
 					pw.printf(DE_EMPHASIZE, line);
 				} else if(rawLine.startsWith("+++")) {
-					pw.printf(DE_EMPHASIZE, line);
+					// Don't care 
 				} else if(rawLine.startsWith("---")) {
-					pw.printf(DE_EMPHASIZE, line);
+					// Don't care 
 				} else if(rawLine.startsWith("@@")) {
 					final Matcher matcher = HUNK_PATTERN.matcher(rawLine);
-					if(matcher.matches()) {
-						oldStart = Integer.parseInt(matcher.group(1));
-						newStart = Integer.parseInt(matcher.group(3));
-					}
+					if(!matcher.matches()) throw new IllegalArgumentException("Malformed diff");
+					oldStart = Integer.parseInt(matcher.group(1));
+					newStart = Integer.parseInt(matcher.group(3));
 					pw.printf(DE_EMPHASIZE, line);
 				} else if(rawLine.startsWith("-")) {
-					pw.printf("<span style=\"font-size: 9px;\">(%4d|    )</span><span style=\"background: rgb(255,144,144);\">%s</span>\n", oldStart, line);
+					pw.printf("<span style=\"font-size: 8px;\">(%4d|    )</span><span style=\"background: rgb(255,144,144);\">%s</span>\n", oldStart, line);
 					++oldStart;
 				} else if(rawLine.startsWith("+")) {
-					pw.printf("<span style=\"font-size: 9px;\">(    |%4d)</span><span style=\"background: rgb(144,255,144);\">%s</span>\n", newStart, line);
+					pw.printf("<span style=\"font-size: 8px;\">(    |%4d)</span><span style=\"background: rgb(144,255,144);\">%s</span>\n", newStart, line);
 					++newStart;
 				} else {
-					pw.printf("<span style=\"font-size: 9px;\">(%4d|%4d)</span>%s\n",oldStart, newStart, line);
+					pw.printf("<span style=\"font-size: 8px;\">(%4d|%4d)</span>%s\n",oldStart, newStart, line);
 					++oldStart; ++newStart;
 				}
 			}
@@ -341,6 +349,7 @@ public class HistoryFrame
 		
 	}
 	
+	private static Pattern DIFF_PATTERN = Pattern.compile("diff --git a/(.*) b/(.*)");
 	private static Pattern HUNK_PATTERN = Pattern.compile("@@ -(\\d+),(\\d+) \\+(\\d+),(\\d+) @@");
 	
 	private static final String HEADER_ROW = "<tr>\n" +
