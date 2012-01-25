@@ -13,4 +13,6 @@ public abstract class Colorizer {
 			return htmlEscape(line);
 		}
 	};
+
+	public void reset() {}
 }

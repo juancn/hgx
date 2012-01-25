@@ -5,7 +5,12 @@ import java.text.ParseException;
 public class JavaColorizer extends Colorizer {
 	
 	private boolean unterminatedComment;
-	
+
+	@Override
+	public void reset() {
+		unterminatedComment = false;
+	}
+
 	@Override
 	public String colorizeLine(String line) {
 		StringBuilder sb = new StringBuilder();

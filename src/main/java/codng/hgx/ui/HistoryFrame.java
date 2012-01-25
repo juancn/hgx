@@ -317,6 +317,7 @@ public class HistoryFrame
 					oldStart = Integer.parseInt(matcher.group(1));
 					newStart = Integer.parseInt(matcher.group(3));
 					pw.printf(DE_EMPHASIZE, line);
+					colorizer.reset();
 				} else if(rawLine.startsWith("-")) {
 					pw.printf("<span style=\"font-size: 8px;\">(%4d|    )</span><span style=\"background: rgb(255,238,238);\">%s</span>\n", oldStart, colorizer.colorizeLine(rawLine));
 					++oldStart;
