@@ -102,7 +102,7 @@ public class JavaLexer
             }
 			c = read();
         }
-        unread();
+        if(c != '"') unread();
         return makeToken(TokenType.STRING);
     }
 
