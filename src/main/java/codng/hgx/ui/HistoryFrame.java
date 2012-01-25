@@ -298,7 +298,7 @@ public class HistoryFrame
 					} else {
 						pw.print("</pre>");
 					}
-					pw.printf("<p style=\"margin-top: 5px; margin-left: 10px; margin-bottom: 5px; font-size: 12px; background: rgb(220,220,250); font-family: 'Lucida Grande';\">%s</p>", file);
+					pw.printf("<p style=\"margin-top: 5px; margin-bottom: 5px; margin-left: 10px; margin-right: 10px; font-size: 12px; background: rgb(220,220,250); font-family: 'Lucida Grande';\">%s</p>", file);
 					pw.print("<pre style=\"margin-left: 10px; font-family: Monaco; font-size: 9px;\">");
 				} else if(rawLine.startsWith("new file mode")) {
 					pw.printf(DE_EMPHASIZE, line);
