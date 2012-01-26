@@ -11,6 +11,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.Formatter;
 import java.util.HashSet;
@@ -100,11 +101,22 @@ public class ChangeSet
 	private static List<ChangeSet> filterBranch(String branch, List<ChangeSet> changeSets) {
 		final List<ChangeSet> result = new ArrayList<>();
 		final Set<Id> unresolvedParents = new HashSet<>();
+		final Set<Id> inBranch = new HashSet<>();
 		for (ChangeSet changeSet : changeSets) {
+			if(changeSet.branch.equals(branch)) inBranch.add(changeSet.id);
 			if(changeSet.branch.equals(branch) || unresolvedParents.contains(changeSet.id)) {
 				result.add(changeSet);
 				unresolvedParents.addAll(changeSet.parents);
 				unresolvedParents.remove(changeSet.id);
+				Collections.sort(changeSet.parents, new Comparator<Id>() {
+					@Override
+					public int compare(Id o1, Id o2) {
+						if(o1.equals(o2)) return 0;
+						if(inBranch.contains(o1)) return -1;
+						if(inBranch.contains(o2)) return 1;
+						return (int) (o1.seqNo - o2.seqNo);
+					}
+				});
 			}
 		}
 		return result;

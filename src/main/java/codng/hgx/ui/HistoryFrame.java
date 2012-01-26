@@ -77,12 +77,13 @@ public class HistoryFrame
 						g.clearRect(0, 0, getWidth(), getHeight());
 						g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-						int bullet = drawLines(g, cellSize, 0, 0, rowIndex > 0 ? (Row) historyTableModel.getValueAt(rowIndex - 1, columnIndex) : null, row);
+						final Row previousRow = rowIndex > 0 ? (Row) historyTableModel.getValueAt(rowIndex - 1, columnIndex) : null;
+						int bullet = drawLines(g, cellSize, 0, 0, previousRow, row);
 						if (rowIndex + 1 < historyTableModel.getRowCount()) {
 							drawLines(g, cellSize, 0, getHeight(), row, (Row) historyTableModel.getValueAt(rowIndex + 1, columnIndex));
 						}
 						drawBullet(g, cellSize, 0, bullet);
-						drawSummary(g, cellSize, 0, 0, row);
+						drawSummary(g, cellSize, 0, 0, previousRow, row);
 					}
 
 					private int drawLines(Graphics2D g, int cellSize, int xoff, int yoff, Row previousRow, Row currentRow) {
@@ -111,11 +112,31 @@ public class HistoryFrame
 						return bulletOff;
 					}
 
-					private void drawSummary(Graphics2D g, int cellSize, int xoff, int yoff, Row currentRow) {
+					private void drawSummary(Graphics2D g, int cellSize, int xoff, int yoff, Row previousRow, Row currentRow) {
 						final int halfCell = cellSize / 2;
 						if (isSelected)
 							g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_OFF);
-						g.drawString(currentRow.changeSet.summary, cellOffset(halfCell, xoff, currentRow.cells.size()) + cellSize, yoff + halfCell + g.getFont().getSize() / 2);
+
+						final int xbase = cellOffset(halfCell, xoff, currentRow.cells.size()) + cellSize;
+						int xlabel = 0;
+						final String branch = currentRow.changeSet.branch;
+						if(previousRow == null || !previousRow.changeSet.branch.equals(branch)) {
+							final Color color = g.getColor();
+							final int width = g.getFontMetrics().stringWidth(branch);
+							xlabel = width + 10;
+							final Color labelColor = branchColor(branch);
+							g.setColor(labelColor);
+							g.fillRoundRect(xbase, 1, width + 6, getHeight() - 2, 5, 5);
+							g.setColor(labelColor.darker());
+							g.drawRoundRect(xbase, 1, width + 6, getHeight() - 2, 5, 5);
+							g.setColor(color);
+							g.drawString(branch, xbase + 3, yoff + halfCell + g.getFont().getSize() / 2);
+						}
+						g.drawString(currentRow.changeSet.summary, xbase + xlabel, yoff + halfCell + g.getFont().getSize() / 2);
+					}
+
+					private Color branchColor(String branch) {
+						return new Color(Color.HSBtoRGB((Math.abs(branch.hashCode())%30)/30f, 0.3f, 1f));
 					}
 
 					private void drawBullet(Graphics2D g, int cellSize, int yoff, int xoff) {
