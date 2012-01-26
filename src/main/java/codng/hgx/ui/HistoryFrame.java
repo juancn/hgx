@@ -88,7 +88,8 @@ public class HistoryFrame
 					private int drawLines(Graphics2D g, int cellSize, int xoff, int yoff, Row previousRow, Row currentRow) {
 						final int halfCell = cellSize / 2;
 						int bulletOff = -1;
-
+						final Color c = g.getColor();
+						g.setColor(new Color(0, 200, 0));
 						for (int j = 0; j < currentRow.cells.size(); j++) {
 							int x = cellOffset(halfCell, xoff, j);
 							Cell cell = currentRow.cells.get(j);
@@ -106,6 +107,7 @@ public class HistoryFrame
 								}
 							}
 						}
+						g.setColor(c);
 						return bulletOff;
 					}
 
@@ -214,6 +216,7 @@ public class HistoryFrame
 		pw.printf(HEADER_ROW, "Date:", row.changeSet.date);
 		pw.printf(HEADER_ROW, "Summary:", "<b>" + Colorizer.htmlEscape(row.changeSet.summary) + "</b>");
 		pw.printf(HEADER_ROW, "Parent:", row.changeSet.parents);
+		pw.printf(HEADER_ROW, "Branch:", "<b>" + Colorizer.htmlEscape(row.changeSet.branch) + "</b>");
 		pw.print("</tbody>");
 		pw.print("</table>");
 		pw.print(RULER);

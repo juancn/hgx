@@ -62,7 +62,7 @@ public class ChangeSet
 		final List<ChangeSet> updated = loadFrom(snk);
 		System.out.println("\t[hg log] exit code: " + exitCode.call());
 		end = System.currentTimeMillis();
-		System.out.printf("\t[hg log]: %dms\n", end-start);
+		System.out.printf("\t[hg log] took: %dms, retrieved %d entries\n", end-start, updated.size());
 		
 		start = System.currentTimeMillis();
 		if(!updated.isEmpty()) {
