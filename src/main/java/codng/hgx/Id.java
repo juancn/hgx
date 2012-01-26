@@ -1,6 +1,10 @@
 package codng.hgx;
 
-public class Id {
+import java.io.Serializable;
+
+public class Id 
+		implements Serializable 
+{
 	public final long seqNo; 
 	public final String hash;
 

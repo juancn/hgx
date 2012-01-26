@@ -6,15 +6,22 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
+import java.io.Serializable;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.Formatter;
+import java.util.HashSet;
 import java.util.List;
+import java.util.RandomAccess;
+import java.util.Set;
 import java.util.concurrent.Callable;
 
-public class ChangeSet {
+public class ChangeSet 
+		implements Serializable 
+{
 	public final Id id;
 	public final String branch;
 	public final String tag;
@@ -33,17 +40,78 @@ public class ChangeSet {
 	}
 
 	public static List<ChangeSet> loadFromCurrentDirectory() throws Exception {
+		final String id = Command.executeSimple("hg", "id", "-r", "0").trim();
 		final String branch = Command.executeSimple("hg", "branch").trim();
-		final PipedInputStream snk = new QuietPipedInputStream();
+
+		System.out.println("Loading history...");
+		long start, end;
 		
-		Callable<Integer> exitCode = new Command("hg", "log", "--branch", branch)
+		start = System.currentTimeMillis();
+		final List<ChangeSet> changeSets = Cache.loadHistory(id);
+		end = System.currentTimeMillis();
+		System.out.printf("\tCache load: %dms\n", end-start);
+
+		start = System.currentTimeMillis();
+		final PipedInputStream snk = new QuietPipedInputStream();
+		int since = changeSets.isEmpty() ? 0 : (int) last(changeSets).id.seqNo;
+		Callable<Integer> exitCode = new Command("hg", "log", "-r", since +":")
 				.redirectError(System.err)
 				.redirectOutput(new PipedOutputStream(snk))
 				.start();
 
-		final List<ChangeSet> changeSets = loadFrom(snk);
-		System.out.println("exit code: " + exitCode.call());
-		return changeSets;
+		final List<ChangeSet> updated = loadFrom(snk);
+		System.out.println("\t[hg log] exit code: " + exitCode.call());
+		end = System.currentTimeMillis();
+		System.out.printf("\t[hg log]: %dms\n", end-start);
+		
+		start = System.currentTimeMillis();
+		if(!updated.isEmpty()) {
+			assert changeSets.isEmpty() || updated.get(0).id.equals(last(changeSets));
+			if (changeSets.isEmpty()) {
+				changeSets.addAll(updated);
+			} else {
+				changeSets.addAll(updated.subList(1, updated.size()));
+			}
+			Cache.saveHistory(id, changeSets);
+		}
+
+		verifyIntegrity(changeSets);
+		
+		Collections.reverse(changeSets);
+		
+		linkParents(changeSets);
+		
+		final List<ChangeSet> result = filterBranch(branch, changeSets);
+		end = System.currentTimeMillis();
+		System.out.printf("\tUpdate and filtering: %dms\n", end-start);
+		System.out.println("Done!");
+		return result;
+	}
+
+	private static void verifyIntegrity(List<ChangeSet> changeSets) {
+		for (int i = 0; i < changeSets.size(); i++) {
+			ChangeSet c = changeSets.get(i);
+			if(c.id.seqNo != i) {
+				throw new IllegalStateException("Non sequential history? " + i + " -> " + c.id);
+			}
+		}
+	}
+
+	private static List<ChangeSet> filterBranch(String branch, List<ChangeSet> changeSets) {
+		final List<ChangeSet> result = new ArrayList<>();
+		final Set<Id> unresolvedParents = new HashSet<>();
+		for (ChangeSet changeSet : changeSets) {
+			if(changeSet.branch.equals(branch) || unresolvedParents.contains(changeSet.id)) {
+				result.add(changeSet);
+				unresolvedParents.addAll(changeSet.parents);
+				unresolvedParents.remove(changeSet.id);
+			}
+		}
+		return result;
+	}
+
+	private static <X> X last(List<X> list) {
+		return list.get(list.size() - 1);
 	}
 
 	@Override
@@ -75,6 +143,10 @@ public class ChangeSet {
 			}
 		}
 
+		return changeSets;
+	}
+
+	private static void linkParents(List<ChangeSet> changeSets) {
 		//Link parents
 		for (int i = 0; i < changeSets.size()-1; i++) {
 			final ChangeSet current = changeSets.get(i);
@@ -83,7 +155,6 @@ public class ChangeSet {
 				current.parents.add(next.id);
 			}
 		}
-		return changeSets;
 	}
 
 	private static ChangeSet parse(List<Entry> entries) throws IOException, ParseException {

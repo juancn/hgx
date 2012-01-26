@@ -1,8 +1,8 @@
 package codng.hgx.ui;
 
+import codng.hgx.Cache;
 import codng.hgx.Cell;
 import codng.hgx.ChangeSet;
-import codng.hgx.Command;
 import codng.hgx.History;
 import codng.hgx.Row;
 
@@ -25,17 +25,10 @@ import java.awt.HeadlessException;
 import java.awt.RenderingHints;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
-import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
-import java.io.Reader;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.util.Iterator;
@@ -53,7 +46,6 @@ public class HistoryFrame
 {
 
 	private static final String RULER = "<hr style=\"border-top-width: 0px; border-right-width: 0px; border-bottom-width: 0px; border-left-width: 0px; border-style: initial; border-color: initial; height: 1px; margin-top: 0px; margin-right: 8px; margin-bottom: 0px; margin-left: 8px; background-color: rgb(222, 222, 222); clear: both; font-family: 'Lucida Grande';\">";
-	private static final File CACHE_DIR = new File(System.getProperty("user.home"), ".hgx");
 	private static final String DE_EMPHASIZE = "<span style=\"font-size: 8px; color: rgb(160,160,160);\">%s</span>\n";
 	private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 	private JTable historyTable;
@@ -227,7 +219,7 @@ public class HistoryFrame
 		pw.print(RULER);
 
 		try {
-			colorize(pw, loadDiff(row));
+			colorize(pw, Cache.loadDiff(row));
 		} catch (IOException e) {
 			e.printStackTrace();
 			pw.printf("<pre>%s</pre>", e.getMessage());
@@ -237,46 +229,6 @@ public class HistoryFrame
 		pw.print("</html>");
 		pw.close();
 		return sw.toString();
-	}
-
-	private String loadDiff(Row row) throws IOException {
-		String key = row.changeSet.parents.get(0).hash + "-" + row.changeSet.id.hash;
-		File file = new File(CACHE_DIR, key);
-		final String diff;
-		if(file.exists()) {
-			diff = read(file);
-		} else {
-			diff = Command.executeSimple("hg", "diff", "--git","-r", row.changeSet.parents.get(0).hash, "-r", row.changeSet.id.hash);
-			write(diff, file);
-		}
-		return diff;
-	}
-
-	private void write(String diff, File file) throws IOException {
-		final File parentFile = file.getParentFile();
-		if(!parentFile.exists()) {
-			parentFile.mkdirs();
-		}
-		
-		final File temp = File.createTempFile("diff", "tmp", parentFile);
-		final FileOutputStream fos = new FileOutputStream(temp);
-		final OutputStreamWriter out = new OutputStreamWriter(new BufferedOutputStream(fos), "UTF-8");
-		out.write(diff);
-		out.close();;
-		temp.renameTo(file);
-	}
-
-	private String read(File file) throws IOException {
-		final BufferedInputStream inputStream = new BufferedInputStream(new FileInputStream(file));
-		final Reader in = new BufferedReader(new InputStreamReader(inputStream, "UTF-8"));
-		final StringWriter out = new StringWriter();
-		final char[] buffer = new char[512];
-		int read;
-		while ((read = in.read(buffer)) != -1) {
-			out.write(buffer, 0, read);
-		}
-		in.close();
-		return out.toString();
 	}
 
 	private void colorize(PrintWriter pw,  String diff) {
