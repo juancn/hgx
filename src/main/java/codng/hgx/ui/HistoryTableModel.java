@@ -1,5 +1,6 @@
 package codng.hgx.ui;
 
+import codng.hgx.Id;
 import codng.hgx.Row;
 
 import javax.swing.event.TableModelListener;
@@ -14,7 +15,7 @@ public class HistoryTableModel implements TableModel {
 	private final List<Row> history = new ArrayList<>();
 
 	private static final String[] columnNames = { "Subject", "Author", "Date"}; 
-	private static final Class[] columnClasses = { Row.class, String.class, Date.class };
+	private static final Class[] columnClasses = { Row.class, String.class, Date.class, Id.class};
 
 	public HistoryTableModel(Iterator<Row> historyIt) {
 		this.historyIt = historyIt;
@@ -69,6 +70,7 @@ public class HistoryTableModel implements TableModel {
 			case 0: return row;
 			case 1: return row.changeSet.user;
 			case 2: return row.changeSet.date;
+			case 3: return row.changeSet.id;
 		}
 		throw new IndexOutOfBoundsException("Column: " + columnIndex);
 	}

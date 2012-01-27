@@ -167,7 +167,8 @@ public class HistoryFrame
 		
 		split = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
 		split.setTopComponent(tableScrollPane);
-		split.setBottomComponent(new JScrollPane(detail));
+		final JScrollPane detailScrollPane = new JScrollPane(detail);
+		split.setBottomComponent(detailScrollPane);
 		getContentPane().add(split);
 
 		addWindowListener(new WindowAdapter() {
@@ -221,7 +222,7 @@ public class HistoryFrame
 		setVisible(true);
 		setLocationRelativeTo(null);
 
-		historyTable.getColumnModel().getColumn(0).setPreferredWidth(800);
+		historyTable.getColumnModel().getColumn(0).setPreferredWidth(900);
 		split.setDividerLocation(1-(1/golden));
 	}
 
