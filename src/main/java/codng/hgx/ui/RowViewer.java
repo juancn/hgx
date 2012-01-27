@@ -124,7 +124,7 @@ public class RowViewer
 					final Matcher matcher = DIFF_PATTERN.matcher(line);
 					if(!matcher.matches()) throw new IllegalArgumentException("Malformed diff");
 					final String file = matcher.group(2);
-					line().add(text(file).bold());
+					line().add(align(text(file).vgap(10).bold(), getParent().getWidth()-50).background(220, 220, 250));
 				
 					if(file.endsWith(".java")) {
 						colorizer = new JavaColorizer(this);
@@ -145,22 +145,13 @@ public class RowViewer
 					line().add(code(line).rgb(127, 127, 127));
 					colorizer.reset();
 				} else if(line.startsWith("-")) {
-					line()
-							.add(align(code(oldStart), 30).right())
-							.add(align(code(""), 30).right())
-							.add(colorizer.colorizeLine(line).background(255,238,238));
+					numbered(oldStart, -1, colorizer.colorizeLine(line).background(255, 238, 238));
 					++oldStart;
 				} else if(line.startsWith("+")) {
-					line()
-							.add(align(code(""), 30).right())
-							.add(align(code(newStart), 30).right())
-							.add(colorizer.colorizeLine(line).background(221, 255, 221));
+					numbered(-1, newStart, colorizer.colorizeLine(line).background(221, 255, 221));
 					++newStart;
 				} else {
-					line()
-							.add(align(code(oldStart), 30).right())
-							.add(align(code(newStart), 30).right())
-							.add(colorizer.colorizeLine(line));
+					numbered(oldStart, newStart, colorizer.colorizeLine(line));
 					++oldStart; ++newStart;
 				}
 			}
@@ -169,12 +160,34 @@ public class RowViewer
 		}
 	}
 
+	private Strip numbered(int oldStart, int newStart, Block block) {
+		return line()
+				.add(align(code(oldStart == -1? "" : oldStart).size(10), 30).right().background(250, 250, 250))
+				.add(gap(2))
+				.add(align(code(newStart == -1 ? "" : newStart).size(10), 30).right().background(250, 250, 250))
+				.add(block);
+	}
+
+	private Block<Block> gap(final int gap) {
+		return new Block<Block>() {
+			@Override
+			float getHeight(Graphics2D g) {
+				return 0;
+			}
+
+			@Override
+			float getWidth(Graphics2D g) {
+				return gap;
+			}
+		};
+	}
+
 	Text code(Object line) {
 		return text(line).monospaced();
 	}
 
 	Strip line() {
-		final Strip line = strip();
+		final Strip line = strip().hgap(50);
 		lines.add(line);
 		return line;
 	}
@@ -184,11 +197,11 @@ public class RowViewer
 	}
 
 	private void hr() {
-		line().add(new HRuler());
+		lines.add(strip().add(new HRuler(getParent().getWidth())));
 	}
 
 	private void header(String label, Text value) {
-		line().add(align(text(label).rgb(127, 127, 127).bold(), 100).right(), value);
+		lines.add(strip().add(align(text(label).rgb(127, 127, 127).bold(), 100).right(), value));
 	}
 
 	private void header(String label, Object value) {
@@ -258,6 +271,8 @@ public class RowViewer
 
 	class Strip extends Block<Strip> {
 		private List<Block> blocks = new ArrayList<>();
+		private float hgap = 0;
+		
 		
 		Strip add(Block... values) {
 			blocks.addAll(Arrays.asList(values));
@@ -275,7 +290,7 @@ public class RowViewer
 
 		@Override
 		void drawAt(float x, float y, Graphics2D g) {
-			float xoff = x;
+			float xoff = x + hgap/2;
 			for (Block block : blocks) {
 				block.drawAt(xoff, y, g);
 				xoff += block.getWidth(g);
@@ -284,7 +299,7 @@ public class RowViewer
 
 		@Override
 		float getWidth(Graphics2D g) {
-			float width = 0;
+			float width = hgap;
 			for (Block block : blocks) {
 				width += block.getWidth(g);
 			}
@@ -298,6 +313,11 @@ public class RowViewer
 			}
 			return super.background(r, g, b);
 		}
+		
+		Strip hgap(final float hgap) {
+			this.hgap = hgap;
+			return this;
+		}
 	}
 	
 	class Text extends Block<Text> {
@@ -308,6 +328,7 @@ public class RowViewer
 		private boolean bold;
 		private boolean monospaced;
 		private boolean italic;
+		private int size = 12;
 
 		Text(String text) {
 			this.text = text;
@@ -315,6 +336,11 @@ public class RowViewer
 
 		public Text bold() {
 			bold = true;
+			return this;
+		}
+
+		public Text size(final int size) {
+			this.size = size;
 			return this;
 		}
 		
@@ -334,8 +360,9 @@ public class RowViewer
 
 		private Font font() {
 			Font font = monospaced ? RowViewer.monospaced() : variable();
-			font = bold ? font.deriveFont(Font.BOLD) : font;
-			font = italic ? font.deriveFont(Font.ITALIC) : font;
+			if (bold) font = font.deriveFont(Font.BOLD);
+			if (italic) font = font.deriveFont(Font.ITALIC);
+			if (size != font.getSize()) font = font.deriveFont((float)size);
 			return font;
 		}
 
@@ -359,6 +386,11 @@ public class RowViewer
 
 		public Text monospaced() {
 			monospaced = true;
+			return this;
+		}
+
+		public Text vgap(final float vgap) {
+			this.vgap = vgap;
 			return this;
 		}
 	}
@@ -415,12 +447,23 @@ public class RowViewer
 		float getWidth(Graphics2D g) {
 			return width;
 		}
+
+		@Override
+		HBox background(int r, int g, int b) {
+			block.background(r, g, b);
+			return super.background(r, g, b);
+		}
 	}
 	
 	class HRuler extends Block<HRuler> {
 
 		private final float height = 10;
-		private final float hpad = 20;
+		private final float width;
+		private final float hpad = 50;
+
+		HRuler(float width) {
+			this.width = width;
+		}
 
 		@Override
 		void drawAt(float x, float y, Graphics2D g) {
@@ -435,7 +478,7 @@ public class RowViewer
 
 		@Override
 		float getWidth(Graphics2D g) {
-			return RowViewer.this.getWidth() - hpad;
+			return width;
 		}
 	}
 	

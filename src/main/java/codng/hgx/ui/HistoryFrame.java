@@ -39,6 +39,7 @@ public class HistoryFrame
 	private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 	private JTable historyTable;
 	private JSplitPane split;
+	private RowViewer detail;
 
 	public HistoryFrame(String title, Iterator<Row> historyGen) throws HeadlessException {
 		super(title);
@@ -150,7 +151,7 @@ public class HistoryFrame
 		JScrollPane tableScrollPane = new JScrollPane(historyTable);
 
 
-		final RowViewer detail = new RowViewer();
+		detail = new RowViewer();
 		
 		split = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
 		split.setTopComponent(tableScrollPane);
@@ -211,6 +212,7 @@ public class HistoryFrame
 
 		historyTable.getColumnModel().getColumn(0).setPreferredWidth(900);
 		split.setDividerLocation(1-(1/golden));
+		detail.setPreferredSize(getSize());
 	}
 
 
@@ -219,6 +221,7 @@ public class HistoryFrame
 		final List<ChangeSet> changeSets;
 		if (args.length == 1 &&  "--debug".equals(args[0])) { 
 			changeSets = ChangeSet.loadFrom(new FileInputStream("/Users/juancn/history-case16146.log"));
+			ChangeSet.linkParents(changeSets);
 		} else {
 			changeSets = ChangeSet.loadFromCurrentDirectory();
 		}

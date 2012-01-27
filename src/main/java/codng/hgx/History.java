@@ -8,6 +8,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.text.ParseException;
 import java.util.Iterator;
+import java.util.List;
 
 public class History 
 		implements Iterable<Row>
@@ -47,7 +48,9 @@ public class History
 
 	public static void main(String[] args) throws IOException, ParseException {
 //		final TreeBuilder tb = new TreeBuilder(ChangeSet.loadFrom(new FileInputStream("/Users/juancn/history.log")));
-		final History tb = new History(ChangeSet.loadFrom(new FileInputStream("/Users/juancn/history-case16146.log")));
+		final List<ChangeSet> changeSets = ChangeSet.loadFrom(new FileInputStream("/Users/juancn/history-case16146.log"));
+		ChangeSet.linkParents(changeSets);
+		final History tb = new History(changeSets);
 
 		Frame f = new Frame("test") {
 			@Override

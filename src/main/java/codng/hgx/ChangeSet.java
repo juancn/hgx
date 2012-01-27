@@ -16,7 +16,6 @@ import java.util.Date;
 import java.util.Formatter;
 import java.util.HashSet;
 import java.util.List;
-import java.util.RandomAccess;
 import java.util.Set;
 import java.util.concurrent.Callable;
 
@@ -41,8 +40,7 @@ public class ChangeSet
 	}
 
 	public static List<ChangeSet> loadFromCurrentDirectory() throws Exception {
-		final String id = Command.executeSimple("hg", "id", "-r", "0").trim();
-		final String branch = Command.executeSimple("hg", "branch").trim();
+		final String id = Hg.id();
 
 		System.out.println("Loading history...");
 		long start, end;
@@ -82,7 +80,7 @@ public class ChangeSet
 		
 		linkParents(changeSets);
 		
-		final List<ChangeSet> result = filterBranch(branch, changeSets);
+		final List<ChangeSet> result = filterBranch(Hg.branch(), changeSets);
 		end = System.currentTimeMillis();
 		System.out.printf("\tUpdate and filtering: %dms\n", end-start);
 		System.out.println("Done!");
@@ -158,7 +156,7 @@ public class ChangeSet
 		return changeSets;
 	}
 
-	private static void linkParents(List<ChangeSet> changeSets) {
+	public static void linkParents(List<ChangeSet> changeSets) {
 		//Link parents
 		for (int i = 0; i < changeSets.size()-1; i++) {
 			final ChangeSet current = changeSets.get(i);
