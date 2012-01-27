@@ -1,18 +1,22 @@
 package codng.hgx.ui;
 
-public abstract class Colorizer {
-	public abstract String colorizeLine(String line);
-	
-	public static String htmlEscape(CharSequence s) {
-		return s.toString().replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
+abstract class Colorizer {
+	protected final RowViewer rowViewer;
+
+	protected Colorizer(RowViewer rowViewer) {
+		this.rowViewer = rowViewer;
 	}
 
-	public static final Colorizer PLAIN = new Colorizer() {
-		@Override
-		public String colorizeLine(String line) {
-			return htmlEscape(line);
-		}
-	};
+	public abstract RowViewer.Block colorizeLine(String line);
+	
+	public static final Colorizer plain(RowViewer rowViewer) {
+		return new Colorizer(rowViewer) {
+			@Override
+			public RowViewer.Block  colorizeLine(String line) {
+				return rowViewer.code(line);
+			}
+		};
+	}
 
 	public void reset() {}
 }

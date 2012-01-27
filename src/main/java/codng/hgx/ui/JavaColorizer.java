@@ -2,9 +2,12 @@ package codng.hgx.ui;
 
 import java.text.ParseException;
 
-public class JavaColorizer extends Colorizer {
+class JavaColorizer extends Colorizer {
 	
 	private boolean unterminatedComment;
+	JavaColorizer(RowViewer rowViewer) {
+		super(rowViewer);
+	}
 
 	@Override
 	public void reset() {
@@ -12,21 +15,16 @@ public class JavaColorizer extends Colorizer {
 	}
 
 	@Override
-	public String colorizeLine(String line) {
-		StringBuilder sb = new StringBuilder();
+	public RowViewer.Block colorizeLine(String line) {
+		final RowViewer.Strip strip = strip();
 		try {
-			
 			if(unterminatedComment) {
 				final int terminator = line.indexOf("*/");
 				if(terminator == -1) {
-					sb.append("<span style=\"font-style: italic; color: rgb(128,128,128);\">");
-					sb.append(htmlEscape(line));
-					sb.append("</span>");
-					return sb.toString();
+					strip.add(text(line).rgb(128, 128, 128).italic());
+					return strip;
 				} else {
-					sb.append("<span style=\"font-style: italic; color: rgb(128,128,128);\">");
-					sb.append(htmlEscape(line.substring(0, terminator+2)));
-					sb.append("</span>");
+					strip.add(text(line.substring(0, terminator + 2)).rgb(128, 128, 128).italic());
 					line = line.substring(terminator+2);
 					unterminatedComment = false;
 				}
@@ -37,46 +35,45 @@ public class JavaColorizer extends Colorizer {
 				current.getType() != TokenType.EOF;
 				last = current, current = lexer.next()) {
 				if (last == null) {
-					sb.append(htmlEscape(line.substring(0, current.getStartOffset())));
+					strip.add(text(line.substring(0, current.getStartOffset())));
 				} else {
-					sb.append(htmlEscape(line.substring(last.getEndOffset(), current.getStartOffset())));
+					strip.add(text(line.substring(last.getEndOffset(), current.getStartOffset())));
 				}
+				
+				final RowViewer.Text token = text(current.getText());
+				strip.add(token);
+
 				switch (current.getType()) {
 					case ML_COMMENT:
 						if(!current.getText().toString().endsWith("*/")) unterminatedComment = true;
 					case SL_COMMENT:
-						sb.append("<span style=\"font-style: italic; color: rgb(128,128,128);\">"); break;
+						token.rgb(128,128,128).italic(); break;
 					case STRING:
 					case CHAR_LITERAL:
-						sb.append("<span style=\"font-weight: bold; color: rgb(0,128,0);\">"); break;
+						token.rgb(0,128,0).bold(); break;
 					case INT_LITERAL:
 					case LONG_LITERAL:
 					case FLOAT_LITERAL:
 					case DOUBLE_LITERAL:
-						sb.append("<span style=\"color: rgb(0,0,255);\">"); break;
+						token.rgb(0, 0, 255); break;
 				}
 				final boolean reserved = JavaLexer.isReserved(current.getText());
 				
-				if(reserved) sb.append("<span style=\"font-weight: bold; color: rgb(0,0,128);\">"); 
-				sb.append(htmlEscape(current.getText()));
-				if(reserved) sb.append("</span>"); 
-				
-				switch (current.getType()) {
-					case ML_COMMENT: 
-					case SL_COMMENT:
-					case STRING:
-					case CHAR_LITERAL:
-					case INT_LITERAL:
-					case LONG_LITERAL:
-					case FLOAT_LITERAL:
-					case DOUBLE_LITERAL:
-						sb.append("</span>"); break;
-				}
+				if(reserved) token.rgb(0, 0, 128);;
+
 			}
 		} catch (ParseException e) {
 			e.printStackTrace();
-			return htmlEscape(line);
+			return text(line);
 		}
-		return sb.toString();
+		return strip;
+	}
+
+	private RowViewer.Text text(CharSequence text) {
+		return rowViewer.code(text.toString()).hgap(0);
+	}
+
+	private RowViewer.Strip strip() {
+		return rowViewer.strip();
 	}
 }

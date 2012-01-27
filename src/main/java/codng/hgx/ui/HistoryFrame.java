@@ -1,13 +1,11 @@
 package codng.hgx.ui;
 
-import codng.hgx.Cache;
 import codng.hgx.Cell;
 import codng.hgx.ChangeSet;
 import codng.hgx.History;
 import codng.hgx.Row;
 
 import javax.swing.JComponent;
-import javax.swing.JEditorPane;
 import javax.swing.JFrame;
 import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
@@ -22,15 +20,11 @@ import java.awt.Component;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.HeadlessException;
+import java.awt.Rectangle;
 import java.awt.RenderingHints;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.io.BufferedReader;
 import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.StringReader;
-import java.io.StringWriter;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.Executors;
@@ -38,15 +32,10 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class HistoryFrame 
 		extends JFrame 
 {
-
-	private static final String RULER = "<hr style=\"border-top-width: 0px; border-right-width: 0px; border-bottom-width: 0px; border-left-width: 0px; border-style: initial; border-color: initial; height: 1px; margin-top: 0px; margin-right: 8px; margin-bottom: 0px; margin-left: 8px; background-color: rgb(222, 222, 222); clear: both; font-family: 'Lucida Grande';\">";
-	private static final String DE_EMPHASIZE = "<span style=\"font-size: 8px; color: rgb(160,160,160);\">%s</span>\n";
 	private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 	private JTable historyTable;
 	private JSplitPane split;
@@ -161,9 +150,7 @@ public class HistoryFrame
 		JScrollPane tableScrollPane = new JScrollPane(historyTable);
 
 
-		final JEditorPane detail = new JEditorPane();
-		detail.setContentType("text/html");
-		detail.setEditable(false);
+		final RowViewer detail = new RowViewer();
 		
 		split = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
 		split.setTopComponent(tableScrollPane);
@@ -190,16 +177,16 @@ public class HistoryFrame
 					}
 					final AtomicReference<Row> rowRef = new AtomicReference<>((Row) historyTableModel.getValueAt(historyTable.getSelectedRow(), 0));
 
+					// I should move all this to the RowViewer component
 					future = scheduler.schedule(new Runnable() {
 						@Override
 						public void run() {
 							try {
-								final String text = buildDetail(rowRef.get());
 								SwingUtilities.invokeAndWait(new Runnable() {
 									@Override
 									public void run() {
-										detail.setText(text);
-										detail.setCaretPosition(0);
+										detail.setRow(rowRef.get());
+										detail.scrollRectToVisible(new Rectangle());
 									}
 								});
 							} catch (Exception e) {
@@ -208,7 +195,7 @@ public class HistoryFrame
 							}
 
 						}
-					}, 200, TimeUnit.MILLISECONDS);
+					}, 100, TimeUnit.MILLISECONDS);
 
 				}
 			}
@@ -226,91 +213,6 @@ public class HistoryFrame
 		split.setDividerLocation(1-(1/golden));
 	}
 
-	private String buildDetail(Row row) {
-		final StringWriter sw = new StringWriter();
-		final PrintWriter pw = new PrintWriter(sw, true);
-		pw.print("<html>");
-		pw.print("<body style=\"word-wrap: break-word;\">");
-		pw.print("<table id=\"commit_header\" style=\"font-size: 10px; font-family: 'Lucida Grande';\">");
-		pw.print("<tbody>");
-		pw.printf(HEADER_ROW, "SHA:", row.changeSet.id);
-		pw.printf(HEADER_ROW, "Author:", row.changeSet.user);
-		pw.printf(HEADER_ROW, "Date:", row.changeSet.date);
-		pw.printf(HEADER_ROW, "Summary:", "<b>" + Colorizer.htmlEscape(row.changeSet.summary) + "</b>");
-		pw.printf(HEADER_ROW, "Parent:", row.changeSet.parents);
-		pw.printf(HEADER_ROW, "Branch:", "<b>" + Colorizer.htmlEscape(row.changeSet.branch) + "</b>");
-		pw.print("</tbody>");
-		pw.print("</table>");
-		pw.print(RULER);
-
-		try {
-			colorize(pw, Cache.loadDiff(row));
-		} catch (IOException e) {
-			e.printStackTrace();
-			pw.printf("<pre>%s</pre>", e.getMessage());
-		}
-
-		pw.print("</body>");
-		pw.print("</html>");
-		pw.close();
-		return sw.toString();
-	}
-
-	private void colorize(PrintWriter pw,  String diff) {
-		final StringReader sr = new StringReader(diff);
-		final BufferedReader br = new BufferedReader(sr);
-		try {
-			int oldStart = -1, newStart = -1;
-			boolean firstDiff = true;
-			Colorizer colorizer = Colorizer.PLAIN;
-			for(String rawLine = br.readLine(); rawLine != null; rawLine = br.readLine())  {
-				final String line = Colorizer.htmlEscape(rawLine);
-
-				if(rawLine.startsWith("diff")) {
-					final Matcher matcher = DIFF_PATTERN.matcher(line);
-					if(!matcher.matches()) throw new IllegalArgumentException("Malformed diff");
-					final String file = matcher.group(2);
-					if (firstDiff) {
-						firstDiff = false;
-					} else {
-						pw.print("</pre>");
-					}
-					pw.printf("<p style=\"margin-top: 5px; margin-bottom: 5px; margin-left: 10px; margin-right: 10px; font-size: 12px; background: rgb(220,220,250); font-family: 'Lucida Grande';\">%s</p>", file);
-					pw.print("<pre style=\"margin-left: 10px; font-family: Monaco; font-size: 9px;\">");
-					if(file.endsWith(".java")) {
-						colorizer = new JavaColorizer();
-					} else {
-						colorizer = Colorizer.PLAIN;
-					}
-				} else if(rawLine.startsWith("new file mode")) {
-					pw.printf(DE_EMPHASIZE, line);
-				} else if(rawLine.startsWith("+++")) {
-					// Don't care 
-				} else if(rawLine.startsWith("---")) {
-					// Don't care 
-				} else if(rawLine.startsWith("@@")) {
-					final Matcher matcher = HUNK_PATTERN.matcher(rawLine);
-					if(!matcher.matches()) throw new IllegalArgumentException("Malformed diff");
-					oldStart = Integer.parseInt(matcher.group(1));
-					newStart = Integer.parseInt(matcher.group(3));
-					pw.printf(DE_EMPHASIZE, line);
-					colorizer.reset();
-				} else if(rawLine.startsWith("-")) {
-					pw.printf("<span style=\"font-size: 8px;\">(%4d|    )</span><span style=\"background: rgb(255,238,238);\">%s</span>\n", oldStart, colorizer.colorizeLine(rawLine));
-					++oldStart;
-				} else if(rawLine.startsWith("+")) {
-					pw.printf("<span style=\"font-size: 8px;\">(    |%4d)</span><span style=\"background: rgb(221,255,221);\">%s</span>\n", newStart, colorizer.colorizeLine(rawLine));
-					++newStart;
-				} else {
-					pw.printf("<span style=\"font-size: 8px;\">(%4d|%4d)</span><span>%s</span>\n",oldStart, newStart, colorizer.colorizeLine(rawLine));
-					++oldStart; ++newStart;
-				}
-			}
-			pw.println("</pre>");
-		} catch (IOException e) {
-			throw new Error("This shouldn't happen!");
-		}
-	}
 
 	public static void main(String[] args) throws Exception {
 		
@@ -325,18 +227,4 @@ public class HistoryFrame
 		blah.initSize();
 		
 	}
-	
-	private static Pattern DIFF_PATTERN = Pattern.compile("diff --git a/(.*) b/(.*)");
-	private static Pattern HUNK_PATTERN = Pattern.compile("@@ -(\\d+),(\\d+) \\+(\\d+),(\\d+) @@");
-	
-	private static final String HEADER_ROW = "<tr>\n" +
-			"<td class=\"property_name\" style=\"width: 6em; color: rgb(127, 127, 127); text-align: right; font-weight: bold; padding-left: 5px;\">\n" +
-			"%s\n" +
-			"</td>\n" +
-			"<td id=\"commitID\" style=\"padding-left: 5px;\">\n" +
-			"%s\n" +
-			"</td>\n" +
-			"</tr>";
-
-	
 }
