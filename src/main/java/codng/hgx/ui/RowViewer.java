@@ -5,14 +5,18 @@ import codng.hgx.Row;
 
 import javax.swing.JComponent;
 import javax.swing.Scrollable;
+import javax.swing.UIManager;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.RenderingHints;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.awt.font.TextAttribute;
 import java.awt.geom.Line2D;
 import java.awt.geom.Rectangle2D;
@@ -21,6 +25,7 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -35,6 +40,10 @@ public class RowViewer
 {
 	private Row row;
 	private List<Strip> lines = new ArrayList<>();
+	private List<Float> heights = new ArrayList<>();
+	
+	private Point selectionStart;
+	private Point selectionEnd;
 
 	public RowViewer() {
 		this(null);
@@ -42,6 +51,34 @@ public class RowViewer
 
 	public RowViewer(Row row) {
 		this.row = row;
+		final MouseAdapter mouseAdapter = new MouseAdapter() {
+			@Override
+			public void mousePressed(MouseEvent e) {
+				System.out.println("RowViewer.mousePressed");
+				if (e.getButton() == MouseEvent.BUTTON1) {
+					selectionStart = e.getPoint();
+				}
+			}
+
+			@Override
+			public void mouseDragged(MouseEvent e) {
+				System.out.println("RowViewer.mouseDragged");
+				selectionEnd = e.getPoint();
+				repaint();
+			}
+
+			@Override
+			public void mouseReleased(MouseEvent e) {
+				System.out.println("RowViewer.mouseReleased");
+				if (e.getButton() == MouseEvent.BUTTON1) {
+					selectionEnd = e.getPoint();
+					repaint();
+				}
+			}
+		};
+		addMouseListener(mouseAdapter);
+		addMouseMotionListener(mouseAdapter);
+		
 	}
 
 	public Row getRow() {
@@ -57,6 +94,8 @@ public class RowViewer
 
 	private void recalculate() {
 		lines.clear();
+		selectionStart = null;
+		selectionEnd = null;
 		if(row != null) {
 			header("SHA:", row.changeSet.id);
 			header("Author:", row.changeSet.user);
@@ -75,15 +114,24 @@ public class RowViewer
 	}
 
 	private void updateDimensions() {
-		final Graphics2D g = (Graphics2D) getGraphics();
 		float totalHeight = 0, maxWidth = 0, maxHeight = 0;
+		heights.clear();
 		for (Strip line : lines) {
-			final float lineHeight = line.getHeight(g);
+			final float lineHeight = line.height();
 			totalHeight += lineHeight;
+			heights.add(totalHeight);
 			maxHeight += max(maxHeight, totalHeight);
-			maxWidth = max(maxWidth, line.getWidth(g));				
+			maxWidth = max(maxWidth, line.width());				
 		}
 		setPreferredSize(new Dimension((int)maxWidth, (int)totalHeight));
+	}
+	
+	private Block blockAt(float x, float y) {
+		int index = Collections.binarySearch(heights, y);
+		if(index < 0) {
+			index = -index -1;
+		}
+		return lines.get(index).blockAt(x);
 	}
 
 	@Override
@@ -117,10 +165,12 @@ public class RowViewer
 		try {
 			int oldStart = -1, newStart = -1;
 			
+			boolean skipDiff = false;
 			Colorizer colorizer = Colorizer.plain(this);
 			for(String line = br.readLine(); line != null; line = br.readLine())  {
 
 				if(line.startsWith("diff")) {
+					skipDiff = false;
 					final Matcher matcher = DIFF_PATTERN.matcher(line);
 					if(!matcher.matches()) throw new IllegalArgumentException("Malformed diff");
 					final String file = matcher.group(2);
@@ -131,8 +181,18 @@ public class RowViewer
 					} else {
 						colorizer = Colorizer.plain(this);
 					}
-				} else if(line.startsWith("new file mode")) {
+				} else if(line.startsWith("new file mode")) { // I should check that we're still in the header
 					line().add(code(line).rgb(127, 127, 127));
+				} else if(line.startsWith("deleted file mode")) {
+					line().add(code(line).rgb(127, 127, 127));
+					line().add(text("File deleted").rgb(255, 0, 0));
+				} else if(line.startsWith("index ")) {
+					line().add(code(line).rgb(127, 127, 127));
+				} else if(line.startsWith("Binary file ")) {
+					skipDiff = true;
+				} else if(line.startsWith("GIT binary patch")) {
+					line().add(text("(Binary file, content not rendered)").rgb(127, 127, 127));
+					skipDiff = true;
 				} else if(line.startsWith("+++")) {
 					// Don't care 
 				} else if(line.startsWith("---")) {
@@ -150,7 +210,7 @@ public class RowViewer
 				} else if(line.startsWith("+")) {
 					numbered(-1, newStart, colorizer.colorizeLine(line).background(221, 255, 221));
 					++newStart;
-				} else {
+				} else if(!skipDiff) {
 					numbered(oldStart, newStart, colorizer.colorizeLine(line));
 					++oldStart; ++newStart;
 				}
@@ -171,12 +231,12 @@ public class RowViewer
 	private Block<Block> gap(final int gap) {
 		return new Block<Block>() {
 			@Override
-			float getHeight(Graphics2D g) {
+			float height() {
 				return 0;
 			}
 
 			@Override
-			float getWidth(Graphics2D g) {
+			float width() {
 				return gap;
 			}
 		};
@@ -238,23 +298,15 @@ public class RowViewer
 				line.drawAt(0, y, g);
 			}
 
-			y += line.getHeight(g);
+			y += line.height();
 		}
 	}
 	
 	
 	abstract class Block<B extends Block> {
-		void drawAt(float x, float y, Graphics2D g) {
-			g.setColor(background);
-			g.fill(new Rectangle2D.Float(x, y, getWidth(g), getHeight(g)));
-			g.setColor(color);
-		}
-		
-		abstract float getHeight(Graphics2D g);
-		abstract float getWidth(Graphics2D g);
-
-		protected Color color = Color.BLACK;
-		protected Color background = Color.WHITE;
+		protected boolean opaque;
+		private Color color = Color.BLACK;
+		private Color background = Color.WHITE;
 		
 		@SuppressWarnings("unchecked")
 		B rgb(int r, int g, int b) {
@@ -267,56 +319,92 @@ public class RowViewer
 			background = new Color(r, g, b);
 			return (B) this;
 		}
+		
+		protected Color background(boolean selected) {
+			return selected ? UIManager.getDefaults().getColor("TextArea.selectionBackground") : background;
+		}
+
+		protected Color color(boolean selected) {
+			return selected ? color : color;
+		}
+
+		void drawAt(float x, float y, Graphics2D g) {
+			final float h = height();
+			final float w = width();
+			final boolean selected = (selectionStart != null && blockAt(selectionStart.x, selectionStart.y) == this) 
+					|| (selectionEnd != null && blockAt(selectionEnd.x, selectionEnd.y) == this);
+					
+			if (opaque || selected) {
+				g.setColor(background(selected));
+				g.fill(new Rectangle2D.Float(x, y, w, h));
+			}
+			g.setColor(color(selected));
+		}
+		
+		abstract float height();
+		abstract float width();
+
 	}
 
 	class Strip extends Block<Strip> {
 		private List<Block> blocks = new ArrayList<>();
 		private float hgap = 0;
-		
-		
+
+		Strip() {
+			opaque = true;
+		}
+
 		Strip add(Block... values) {
 			blocks.addAll(Arrays.asList(values));
 			return this;
 		}
 
 		@Override
-		float getHeight(Graphics2D g) {
+		float height() {
 			float height = 0;
 			for (Block block : blocks) {
-				height = max(height, block.getHeight(g));
+				height = max(height, block.height());
 			}
 			return height;
 		}
 
 		@Override
 		void drawAt(float x, float y, Graphics2D g) {
+			super.drawAt(x, y, g);
 			float xoff = x + hgap/2;
 			for (Block block : blocks) {
 				block.drawAt(xoff, y, g);
-				xoff += block.getWidth(g);
+				xoff += block.width();
 			}
 		}
 
 		@Override
-		float getWidth(Graphics2D g) {
+		float width() {
 			float width = hgap;
 			for (Block block : blocks) {
-				width += block.getWidth(g);
+				width += block.width();
 			}
 			return width;
-		}
-
-		@Override
-		Strip background(int r, int g, int b) {
-			for (Block block : blocks) {
-				block.background(r, g, b);
-			}
-			return super.background(r, g, b);
 		}
 		
 		Strip hgap(final float hgap) {
 			this.hgap = hgap;
 			return this;
+		}
+
+		public Block blockAt(float x) {
+			if(blocks.isEmpty()) return null;
+			float totalWidth = hgap/2;
+			for (Block block : blocks) {
+				if (block instanceof Strip) {
+					Strip strip = (Strip) block;
+					final Block b1 = strip.blockAt(x - totalWidth);
+					if(b1 != null) return b1;
+				}
+				totalWidth += block.width();
+				if(x < totalWidth) return block;
+			}
+			return blocks.get(blocks.size()-1);
 		}
 	}
 	
@@ -354,8 +442,8 @@ public class RowViewer
 			return this;
 		}
 
-		private FontMetrics fontMetrics(Graphics2D g) {
-			return g.getFontMetrics(font());
+		private FontMetrics fontMetrics() {
+			return getGraphics().getFontMetrics(font());
 		}
 
 		private Font font() {
@@ -367,21 +455,21 @@ public class RowViewer
 		}
 
 		@Override
-		float getHeight(Graphics2D g) {
-			return fontMetrics(g).getHeight() + vgap;
+		float height() {
+			return fontMetrics().getHeight() + vgap;
 		}
 
 		@Override
 		void drawAt(float x, float y, Graphics2D g) {
 			super.drawAt(x, y, g);
 			g.setFont(font());
-			final int ascent = fontMetrics(g).getAscent();
+			final int ascent = fontMetrics().getAscent();
 			g.drawString(text, x+hgap/2 , y + vgap/2 + ascent);
 		}
 
 		@Override
-		float getWidth(Graphics2D g) {
-			return fontMetrics(g).stringWidth(text) + hgap;
+		float width() {
+			return fontMetrics().stringWidth(text) + hgap;
 		}
 
 		public Text monospaced() {
@@ -403,6 +491,7 @@ public class RowViewer
 		HBox(Block block, float width) {
 			this.block = block;
 			this.width = width;
+			opaque = true;
 		}
 
 		HBox right() {
@@ -423,7 +512,7 @@ public class RowViewer
 		@Override
 		void drawAt(float x, float y, Graphics2D g) {
 			super.drawAt(x, y, g);
-			final float blockWidth = block.getWidth(g);
+			final float blockWidth = block.width();
 			float xoff = 0;
 			if(width > blockWidth) {
 				switch (align) {
@@ -439,19 +528,13 @@ public class RowViewer
 		}
 
 		@Override
-		float getHeight(Graphics2D g) {
-			return block.getHeight(g);
+		float height() {
+			return block.height();
 		}
 
 		@Override
-		float getWidth(Graphics2D g) {
+		float width() {
 			return width;
-		}
-
-		@Override
-		HBox background(int r, int g, int b) {
-			block.background(r, g, b);
-			return super.background(r, g, b);
 		}
 	}
 	
@@ -468,16 +551,16 @@ public class RowViewer
 		@Override
 		void drawAt(float x, float y, Graphics2D g) {
 			super.drawAt(x, y, g);
-			g.draw(new Line2D.Float(x + hpad/2,y, x+getWidth(g) - hpad/2, y));
+			g.draw(new Line2D.Float(x + hpad/2,y, x+ width() - hpad/2, y));
 		}
 
 		@Override
-		float getHeight(Graphics2D g) {
+		float height() {
 			return height;
 		}
 
 		@Override
-		float getWidth(Graphics2D g) {
+		float width() {
 			return width;
 		}
 	}

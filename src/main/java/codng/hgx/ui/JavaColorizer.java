@@ -15,7 +15,7 @@ class JavaColorizer extends Colorizer {
 	}
 
 	@Override
-	public RowViewer.Block colorizeLine(String line) {
+	public RowViewer.Strip colorizeLine(String line) {
 		final RowViewer.Strip strip = strip();
 		try {
 			if(unterminatedComment) {
@@ -64,7 +64,7 @@ class JavaColorizer extends Colorizer {
 			}
 		} catch (ParseException e) {
 			e.printStackTrace();
-			return text(line);
+			return strip.add(text(line));
 		}
 		return strip;
 	}

@@ -24,6 +24,7 @@ import java.awt.Rectangle;
 import java.awt.RenderingHints;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.awt.event.WindowListener;
 import java.io.FileInputStream;
 import java.util.Iterator;
 import java.util.List;
@@ -166,7 +167,6 @@ public class HistoryFrame
 			}
 		});
 		
-		
 		historyTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
 			public ScheduledFuture<?> future;
 
@@ -201,6 +201,14 @@ public class HistoryFrame
 				}
 			}
 		});
+		
+		addWindowListener(new WindowAdapter() {
+			@Override
+			public void windowClosing(WindowEvent e) {
+				// Just die
+				System.exit(0);
+			}
+		});
 	}
 
 	private void initSize() {
@@ -213,6 +221,8 @@ public class HistoryFrame
 		historyTable.getColumnModel().getColumn(0).setPreferredWidth(900);
 		split.setDividerLocation(1-(1/golden));
 		detail.setPreferredSize(getSize());
+		// Select the first row
+		historyTable.getSelectionModel().setSelectionInterval(0, 0);
 	}
 
 
