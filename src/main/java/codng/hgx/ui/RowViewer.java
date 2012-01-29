@@ -19,6 +19,7 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.font.TextAttribute;
 import java.awt.geom.Line2D;
+import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -26,6 +27,7 @@ import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -40,7 +42,6 @@ public class RowViewer
 {
 	private Row row;
 	private List<Strip> lines = new ArrayList<>();
-	private List<Float> heights = new ArrayList<>();
 	
 	private Point selectionStart;
 	private Point selectionEnd;
@@ -54,7 +55,6 @@ public class RowViewer
 		final MouseAdapter mouseAdapter = new MouseAdapter() {
 			@Override
 			public void mousePressed(MouseEvent e) {
-				System.out.println("RowViewer.mousePressed");
 				if (e.getButton() == MouseEvent.BUTTON1) {
 					selectionStart = e.getPoint();
 				}
@@ -62,14 +62,14 @@ public class RowViewer
 
 			@Override
 			public void mouseDragged(MouseEvent e) {
-				System.out.println("RowViewer.mouseDragged");
-				selectionEnd = e.getPoint();
-				repaint();
+				if (e.getButton() == MouseEvent.BUTTON1) {
+					selectionEnd = e.getPoint();
+					repaint();
+				}
 			}
 
 			@Override
 			public void mouseReleased(MouseEvent e) {
-				System.out.println("RowViewer.mouseReleased");
 				if (e.getButton() == MouseEvent.BUTTON1) {
 					selectionEnd = e.getPoint();
 					repaint();
@@ -115,11 +115,10 @@ public class RowViewer
 
 	private void updateDimensions() {
 		float totalHeight = 0, maxWidth = 0, maxHeight = 0;
-		heights.clear();
 		for (Strip line : lines) {
 			final float lineHeight = line.height();
+			line.position(0, totalHeight);
 			totalHeight += lineHeight;
-			heights.add(totalHeight);
 			maxHeight += max(maxHeight, totalHeight);
 			maxWidth = max(maxWidth, line.width());				
 		}
@@ -127,11 +126,22 @@ public class RowViewer
 	}
 	
 	private Block blockAt(float x, float y) {
-		int index = Collections.binarySearch(heights, y);
+		int index = Collections.binarySearch(lines, y, new Comparator<Object>() {
+			@Override
+			public int compare(Object o1, Object o2) {
+				return Float.compare(toFloat(o1), toFloat(o2)); 
+			}
+
+			private float toFloat(Object o) {
+				return o instanceof Float? (Float)o : ((Strip)o).position.y;
+			}
+		});
+		
 		if(index < 0) {
 			index = -index -1;
 		}
-		return lines.get(index).blockAt(x);
+		// We always select the next row, because position.y is at the top of the box, so we correct for that.
+		return lines.get(index == 0? index : index - 1).blockAt(x);
 	}
 
 	@Override
@@ -295,7 +305,7 @@ public class RowViewer
 			final Strip line = lines.get(i);
 
 			if ( (y1 <= y && y <= y2) ) {
-				line.drawAt(0, y, g);
+				line.draw(g);
 			}
 
 			y += line.height();
@@ -304,6 +314,7 @@ public class RowViewer
 	
 	
 	abstract class Block<B extends Block> {
+		protected final Point2D.Float position = new Point2D.Float(); 
 		protected boolean opaque;
 		private Color color = Color.BLACK;
 		private Color background = Color.WHITE;
@@ -311,15 +322,17 @@ public class RowViewer
 		@SuppressWarnings("unchecked")
 		B rgb(int r, int g, int b) {
 			color = new Color(r, g, b);
-			return (B) this;
+			return self();
+		}
+
+		B background(int r, int g, int b) {
+			background = new Color(r, g, b);
+			return self();
 		}
 
 		@SuppressWarnings("unchecked")
-		B background(int r, int g, int b) {
-			background = new Color(r, g, b);
-			return (B) this;
-		}
-		
+		protected B self() { return (B) this; }
+
 		protected Color background(boolean selected) {
 			return selected ? UIManager.getDefaults().getColor("TextArea.selectionBackground") : background;
 		}
@@ -327,23 +340,32 @@ public class RowViewer
 		protected Color color(boolean selected) {
 			return selected ? color : color;
 		}
+		
+		protected B position(float x, float y) {
+			position.x = x;
+			position.y = y;
+			return self();
+		}
 
-		void drawAt(float x, float y, Graphics2D g) {
+		protected void draw(Graphics2D g) {
 			final float h = height();
 			final float w = width();
-			final boolean selected = (selectionStart != null && blockAt(selectionStart.x, selectionStart.y) == this) 
-					|| (selectionEnd != null && blockAt(selectionEnd.x, selectionEnd.y) == this);
+			final boolean selected = (selectionStart != null && RowViewer.this.blockAt(selectionStart.x, selectionStart.y) == this) 
+					|| (selectionEnd != null && RowViewer.this.blockAt(selectionEnd.x, selectionEnd.y) == this);
 					
 			if (opaque || selected) {
 				g.setColor(background(selected));
-				g.fill(new Rectangle2D.Float(x, y, w, h));
+				g.fill(new Rectangle2D.Float(position.x, position.y, w, h));
 			}
 			g.setColor(color(selected));
 		}
 		
+		protected Block blockAt(float x) {
+			return position.x <= x && x <= position.x + width() ? this : null;
+		}
+
 		abstract float height();
 		abstract float width();
-
 	}
 
 	class Strip extends Block<Strip> {
@@ -369,12 +391,10 @@ public class RowViewer
 		}
 
 		@Override
-		void drawAt(float x, float y, Graphics2D g) {
-			super.drawAt(x, y, g);
-			float xoff = x + hgap/2;
+		protected void draw(Graphics2D g) {
+			super.draw(g);
 			for (Block block : blocks) {
-				block.drawAt(xoff, y, g);
-				xoff += block.width();
+				block.draw(g);
 			}
 		}
 
@@ -392,19 +412,24 @@ public class RowViewer
 			return this;
 		}
 
-		public Block blockAt(float x) {
-			if(blocks.isEmpty()) return null;
-			float totalWidth = hgap/2;
+		@Override
+		protected Strip position(float x, float y) {
+			super.position(x, y);
+			float xoff = x + hgap/2;
 			for (Block block : blocks) {
-				if (block instanceof Strip) {
-					Strip strip = (Strip) block;
-					final Block b1 = strip.blockAt(x - totalWidth);
-					if(b1 != null) return b1;
-				}
-				totalWidth += block.width();
-				if(x < totalWidth) return block;
+				block.position(xoff, y);
+				xoff += block.width();
 			}
-			return blocks.get(blocks.size()-1);
+			return this;
+		}
+
+		@Override
+		protected Block blockAt(float x) {
+			for (Block block : blocks) {
+				final Block b = block.blockAt(x);
+				if(b != null) return b;
+			}
+			return super.blockAt(x);
 		}
 	}
 	
@@ -447,7 +472,7 @@ public class RowViewer
 		}
 
 		private Font font() {
-			Font font = monospaced ? RowViewer.monospaced() : variable();
+			Font font = monospaced ? monospacedFont() : variableFont();
 			if (bold) font = font.deriveFont(Font.BOLD);
 			if (italic) font = font.deriveFont(Font.ITALIC);
 			if (size != font.getSize()) font = font.deriveFont((float)size);
@@ -460,11 +485,11 @@ public class RowViewer
 		}
 
 		@Override
-		void drawAt(float x, float y, Graphics2D g) {
-			super.drawAt(x, y, g);
+		protected void draw(Graphics2D g) {
+			super.draw(g);
 			g.setFont(font());
 			final int ascent = fontMetrics().getAscent();
-			g.drawString(text, x+hgap/2 , y + vgap/2 + ascent);
+			g.drawString(text, position.x+hgap/2 , position.y + vgap/2 + ascent);
 		}
 
 		@Override
@@ -510,8 +535,14 @@ public class RowViewer
 		}
 		
 		@Override
-		void drawAt(float x, float y, Graphics2D g) {
-			super.drawAt(x, y, g);
+		protected void draw(Graphics2D g) {
+			super.draw(g);
+			block.draw(g);
+		}
+
+		@Override
+		protected HBox position(float x, float y) {
+			super.position(x, y);
 			final float blockWidth = block.width();
 			float xoff = 0;
 			if(width > blockWidth) {
@@ -524,7 +555,8 @@ public class RowViewer
 						break;
 				}
 			}
-			block.drawAt(x + xoff, y, g);
+			block.position(x + xoff, y);
+			return this;
 		}
 
 		@Override
@@ -549,9 +581,9 @@ public class RowViewer
 		}
 
 		@Override
-		void drawAt(float x, float y, Graphics2D g) {
-			super.drawAt(x, y, g);
-			g.draw(new Line2D.Float(x + hpad/2,y, x+ width() - hpad/2, y));
+		protected void draw(Graphics2D g) {
+			super.draw(g);
+			g.draw(new Line2D.Float(position.x + hpad/2,position.y, position.x+ width() - hpad/2, position.y));
 		}
 
 		@Override
@@ -567,14 +599,14 @@ public class RowViewer
 	
 	enum Align { LEFT, CENTER, RIGHT }
 	
-	static Font monospaced() {
+	static Font monospacedFont() {
 		Map<TextAttribute, Object> attributes = new HashMap<>();
 		attributes.put(TextAttribute.FAMILY, "Monaco");
 		attributes.put(TextAttribute.SIZE, 12);
 		return Font.getFont(attributes);
 	}
 
-	static Font variable() {
+	static Font variableFont() {
 		Map<TextAttribute, Object> attributes = new HashMap<>();
 		attributes.put(TextAttribute.FAMILY, "Lucida Grande");
 		attributes.put(TextAttribute.SIZE, 12);
