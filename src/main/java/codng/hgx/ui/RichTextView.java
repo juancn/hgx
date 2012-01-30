@@ -1,7 +1,5 @@
 package codng.hgx.ui;
 
-import codng.hgx.Cache;
-
 import javax.swing.Action;
 import javax.swing.JComponent;
 import javax.swing.KeyStroke;
@@ -30,10 +28,7 @@ import java.awt.geom.Line2D;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.OutputStreamWriter;
-import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -699,7 +694,7 @@ public class RichTextView extends JComponent implements Scrollable {
 
 	private static Font monospacedFont() {
 		Map<TextAttribute, Object> attributes = new HashMap<>();
-		attributes.put(TextAttribute.FAMILY, "Monaco");
+		attributes.put(TextAttribute.FAMILY, OS_X ? "Monaco" : "Courier");
 		attributes.put(TextAttribute.SIZE, 12);
 		return Font.getFont(attributes);
 	}
@@ -714,4 +709,6 @@ public class RichTextView extends JComponent implements Scrollable {
 	private static int clamp(int i) {
 		return i < 0 ? 0 : i;
 	}
+
+	private static final boolean OS_X = System.getProperty("os.name").equals("Mac OS X");
 }
