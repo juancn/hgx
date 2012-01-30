@@ -1,6 +1,5 @@
 package codng.hgx.ui;
 
-import codng.hgx.Cache;
 import codng.hgx.Cell;
 import codng.hgx.ChangeSet;
 import codng.hgx.Hg;
@@ -26,15 +25,12 @@ import java.awt.Rectangle;
 import java.awt.RenderingHints;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.awt.event.WindowListener;
 import java.io.FileInputStream;
+import java.lang.reflect.InvocationTargetException;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
 
 public class HistoryFrame 
 		extends JFrame 
@@ -188,18 +184,22 @@ public class HistoryFrame
 		});
 	}
 
-	private void initSize() {
+	private void doShow() throws InvocationTargetException, InterruptedException {
 		// Pick some pleasing proportions 
 		final double golden = 1.61803399;
 		setSize((int) (900*golden),900);
 		setVisible(true);
-		setLocationRelativeTo(null);
-
-		historyTable.getColumnModel().getColumn(0).setPreferredWidth(900);
-		split.setDividerLocation(1-(1/golden));
-		detail.setPreferredSize(getSize());
-		// Select the first row
-		historyTable.getSelectionModel().setSelectionInterval(0, 0);
+		SwingUtilities.invokeAndWait(new Runnable() {
+			@Override
+			public void run() {
+				setLocationRelativeTo(null);
+				historyTable.getColumnModel().getColumn(0).setPreferredWidth(900);
+				split.setDividerLocation(1 - (1 / golden));
+				detail.setPreferredSize(getSize());
+				// Select the first row
+				historyTable.getSelectionModel().setSelectionInterval(0, 0);
+			}
+		});
 	}
 
 
@@ -217,7 +217,6 @@ public class HistoryFrame
 		}
 		final History tb = new History(changeSets);
 		final HistoryFrame blah = new HistoryFrame(branch, tb.iterator());
-		blah.initSize();
-		
+		blah.doShow();
 	}
 }

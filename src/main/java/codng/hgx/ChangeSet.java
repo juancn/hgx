@@ -63,7 +63,7 @@ public class ChangeSet
 		
 		start = System.currentTimeMillis();
 		if(!updated.isEmpty()) {
-			assert changeSets.isEmpty() || updated.get(0).id.equals(last(changeSets));
+			assert changeSets.isEmpty() || updated.get(0).id.equals(last(changeSets).id);
 			if (changeSets.isEmpty()) {
 				changeSets.addAll(updated);
 			} else {

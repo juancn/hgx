@@ -1,6 +1,7 @@
 package codng.hgx.ui;
 
 import codng.hgx.Cache;
+import codng.hgx.ChangeSet;
 import codng.hgx.Row;
 
 import javax.swing.SwingUtilities;
@@ -44,14 +45,15 @@ public class RowViewer
 	private void recalculate() {
 		clear();
 		if(row != null) {
-			addHeader();
+			addHeader(row.changeSet);
 			line().add(text("Loading...").rgb(200, 200, 200).bold().size(14));
 			finishBuild();
 			lastUpdate = scheduler.schedule(new Runnable() {
+				final Row row = getRow();
 				@Override
 				public void run() {
-					addHeader();
-					addDiff();
+					addHeader(this.row.changeSet);
+					addDiff(this.row);
 					if(interrupted()) return;
 					try {
 						SwingUtilities.invokeAndWait(new Runnable() {
@@ -76,17 +78,17 @@ public class RowViewer
 		return Thread.currentThread().isInterrupted();
 	}
 
-	private void addHeader() {
-		header("SHA:", row.changeSet.id);
-		header("Author:", row.changeSet.user);
-		header("Date:", row.changeSet.date);
-		header("Summary:", text(row.changeSet.summary).bold());
-		header("Parent:", row.changeSet.parents);
-		header("Branch:", text(row.changeSet.branch).bold());
+	private void addHeader(final ChangeSet changeSet) {
+		header("SHA:", changeSet.id);
+		header("Author:", changeSet.user);
+		header("Date:", changeSet.date);
+		header("Summary:", text(changeSet.summary).bold());
+		header("Parent:", changeSet.parents);
+		header("Branch:", text(changeSet.branch).bold());
 		hr();
 	}
 
-	private void addDiff() {
+	private void addDiff(final Row row) {
 		try {
 			colorize(Cache.loadDiff(row));
 		} catch (IOException | InterruptedException e) {

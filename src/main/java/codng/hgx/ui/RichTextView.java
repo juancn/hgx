@@ -6,6 +6,7 @@ import javax.swing.Action;
 import javax.swing.JComponent;
 import javax.swing.KeyStroke;
 import javax.swing.Scrollable;
+import javax.swing.SwingUtilities;
 import javax.swing.TransferHandler;
 import javax.swing.UIManager;
 import javax.swing.text.TextAction;
@@ -150,6 +151,7 @@ public class RichTextView extends JComponent implements Scrollable {
 	}
 	
 	public void finishBuild() {
+		assert SwingUtilities.isEventDispatchThread();
 		synchronized (build) {
 			clear();
 			lines.addAll(build);
@@ -384,10 +386,9 @@ public class RichTextView extends JComponent implements Scrollable {
 			final float w = width();
 			final boolean selected;
 			if(endBlock != null && startBlock != null) {
-				selected = startBlock == this 
-						|| endBlock == this 
-						|| (startBlock.position.y < position.y && position.y < endBlock.position.y)
-						|| (endBlock.position.y < position.y && position.y < startBlock.position.y);
+				// Only line selection is supported
+				selected = (startBlock.position.y <= position.y && position.y <= endBlock.position.y)
+						|| (endBlock.position.y <= position.y && position.y <= startBlock.position.y);
 			} else {
 				selected =false;
 			}
