@@ -92,7 +92,7 @@ public class ChangeSet
 		}
 	}
 
-	public static List<ChangeSet> filterBranch(String branch, List<ChangeSet> changeSets) {
+	public static List<ChangeSet> filterBranch(final String branch, List<ChangeSet> changeSets) {
 		final List<ChangeSet> result = new ArrayList<>();
 		final Set<Id> unresolvedParents = new HashSet<>();
 		final Set<Id> inBranch = new HashSet<>();
@@ -114,6 +114,18 @@ public class ChangeSet
 				});
 			}
 		}
+		
+		// Group all changes belonging to the branch at the top
+		Collections.sort(result, new Comparator<ChangeSet>() {
+			@Override
+			public int compare(ChangeSet o1, ChangeSet o2) {
+				final boolean b1 = o1.branch.equals(branch);
+				final boolean b2 = o2.branch.equals(branch);
+				if(b1 && !b2) return -1;
+				if(!b1 && b2) return  1;
+				return (int) (o2.id.seqNo - o1.id.seqNo);
+			}
+		});
 		return result;
 	}
 
