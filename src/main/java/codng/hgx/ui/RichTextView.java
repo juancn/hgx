@@ -499,7 +499,8 @@ public class RichTextView extends JComponent implements Scrollable {
 		private int size = 12;
 
 		Text(String text) {
-			this.text = text;
+			// Quick & Dirty fix for tabs
+			this.text = text.replace("\t", "    ");
 		}
 
 		public RowViewer.Text bold() {
