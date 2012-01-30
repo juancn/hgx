@@ -170,36 +170,11 @@ public class HistoryFrame
 		});
 		
 		historyTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
-			public ScheduledFuture<?> future;
-
 			@Override
 			public void valueChanged(ListSelectionEvent e) {
 				if (!e.getValueIsAdjusting()) {
-					if (future != null) {
-						future.cancel(false);
-					}
-					final AtomicReference<Row> rowRef = new AtomicReference<>((Row) historyTableModel.getValueAt(historyTable.getSelectedRow(), 0));
-
-					// I should move all this to the RowViewer component
-					future = scheduler.schedule(new Runnable() {
-						@Override
-						public void run() {
-							try {
-								SwingUtilities.invokeAndWait(new Runnable() {
-									@Override
-									public void run() {
-										detail.setRow(rowRef.get());
-										detail.scrollRectToVisible(new Rectangle());
-									}
-								});
-							} catch (Exception e) {
-								// Safe to ignore, but log
-								e.printStackTrace();
-							}
-
-						}
-					}, 100, TimeUnit.MILLISECONDS);
-
+					detail.setRow((Row) historyTableModel.getValueAt(historyTable.getSelectedRow(), 0));
+					detail.scrollRectToVisible(new Rectangle());
 				}
 			}
 		});
@@ -230,15 +205,18 @@ public class HistoryFrame
 
 	public static void main(String[] args) throws Exception {
 		
+		final String branch;
 		final List<ChangeSet> changeSets;
-		if (args.length == 1 &&  "--debug".equals(args[0])) { 
+		if (args.length == 1 &&  "--debug".equals(args[0])) {
+			branch = "Debug";
 			changeSets = ChangeSet.loadFrom(new FileInputStream("/Users/juancn/history-case16146.log"));
 			ChangeSet.linkParents(changeSets);
 		} else {
-			changeSets = ChangeSet.filterBranch(Hg.branch(), ChangeSet.loadFromCurrentDirectory());
+			branch = Hg.branch();
+			changeSets = ChangeSet.filterBranch(branch, ChangeSet.loadFromCurrentDirectory());
 		}
 		final History tb = new History(changeSets);
-		final HistoryFrame blah = new HistoryFrame("blah", tb.iterator());
+		final HistoryFrame blah = new HistoryFrame(branch, tb.iterator());
 		blah.initSize();
 		
 	}

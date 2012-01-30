@@ -3,16 +3,24 @@ package codng.hgx.ui;
 import codng.hgx.Cache;
 import codng.hgx.Row;
 
+import javax.swing.SwingUtilities;
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.StringReader;
+import java.lang.reflect.InvocationTargetException;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class RowViewer
 		extends RichTextView {
+
+	private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 	private Row row;
-	
+	private ScheduledFuture<?> lastUpdate;
+
 	public RowViewer() {
 		this(null);
 	}
@@ -26,6 +34,7 @@ public class RowViewer
 	}
 
 	public void setRow(Row row) {
+		if(lastUpdate != null) lastUpdate.cancel(true);
 		this.row = row;
 		recalculate();
 		revalidate();
@@ -33,22 +42,55 @@ public class RowViewer
 	}
 
 	private void recalculate() {
-		lines.clear();
-		startBlock = null;
-		endBlock = null;
+		clear();
 		if(row != null) {
-			header("SHA:", row.changeSet.id);
-			header("Author:", row.changeSet.user);
-			header("Date:", row.changeSet.date);
-			header("Summary:", text(row.changeSet.summary).bold());
-			header("Parent:", row.changeSet.parents);
-			header("Branch:", text(row.changeSet.branch).bold());
-			hr();
-			try {
-				colorize(Cache.loadDiff(row));
-			} catch (IOException | InterruptedException e) {
-				e.printStackTrace();
-			}
+			addHeader();
+			line().add(text("Loading...").rgb(200, 200, 200).bold().size(14));
+			finishBuild();
+			lastUpdate = scheduler.schedule(new Runnable() {
+				@Override
+				public void run() {
+					addHeader();
+					addDiff();
+					if(interrupted()) return;
+					try {
+						SwingUtilities.invokeAndWait(new Runnable() {
+							@Override
+							public void run() {
+								finishBuild();
+								revalidate();
+								repaint();
+							}
+						});
+					} catch (InterruptedException | InvocationTargetException e) {
+						// Don't care, really
+						e.printStackTrace();
+					}
+				}
+
+			}, 100, TimeUnit.MILLISECONDS);
+		}
+	}
+
+	private boolean interrupted() {
+		return Thread.currentThread().isInterrupted();
+	}
+
+	private void addHeader() {
+		header("SHA:", row.changeSet.id);
+		header("Author:", row.changeSet.user);
+		header("Date:", row.changeSet.date);
+		header("Summary:", text(row.changeSet.summary).bold());
+		header("Parent:", row.changeSet.parents);
+		header("Branch:", text(row.changeSet.branch).bold());
+		hr();
+	}
+
+	private void addDiff() {
+		try {
+			colorize(Cache.loadDiff(row));
+		} catch (IOException | InterruptedException e) {
+			e.printStackTrace();
 		}
 	}
 
@@ -58,7 +100,7 @@ public class RowViewer
 			
 			boolean skipDiff = false;
 			Colorizer colorizer = Colorizer.plain(this);
-			for(String line = br.readLine(); line != null; line = br.readLine())  {
+			for(String line = br.readLine(); line != null && !interrupted(); line = br.readLine())  {
 
 				if(line.startsWith("diff")) {
 					skipDiff = false;

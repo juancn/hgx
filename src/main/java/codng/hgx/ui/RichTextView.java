@@ -44,7 +44,8 @@ import java.util.Map;
 import static java.lang.Math.max;
 
 public class RichTextView extends JComponent implements Scrollable {
-	protected final List<Strip> lines = new ArrayList<>();
+	private final List<Strip> lines = new ArrayList<>();
+	private final List<Strip> build = new ArrayList<>();
 	protected Block startBlock;
 	protected Point selectionStart;
 	protected Block endBlock;
@@ -140,6 +141,26 @@ public class RichTextView extends JComponent implements Scrollable {
 		});
 		getInputMap().put(KeyStroke.getKeyStroke("ctrl A"), selectAll);
 		getInputMap().put(KeyStroke.getKeyStroke("meta A"), selectAll);
+	}
+	
+	public void clear() {
+		lines.clear();
+		startBlock = null;
+		endBlock = null;
+	}
+	
+	public void finishBuild() {
+		synchronized (build) {
+			clear();
+			lines.addAll(build);
+			clearBuild();
+		}
+	}
+
+	public void clearBuild() {
+		synchronized (build) {
+			build.clear();
+		}
 	}
 
 	private String addAction(Action action) {
@@ -265,7 +286,9 @@ public class RichTextView extends JComponent implements Scrollable {
 
 	Strip line() {
 		final Strip line = strip().lpad(25);
-		lines.add(line);
+		synchronized (build) {
+			build.add(line);
+		}
 		return line;
 	}
 
@@ -274,11 +297,15 @@ public class RichTextView extends JComponent implements Scrollable {
 	}
 
 	protected void hr() {
-		lines.add(strip().add(new HRuler(getParent().getWidth())));
+		synchronized (build) {
+			build.add(strip().add(new HRuler(getParent().getWidth())));
+		}
 	}
 
 	protected void header(String label, Text value) {
-		lines.add(strip().add(align(text(label).rgb(127, 127, 127).bold(), 100).right(), value));
+		synchronized (build) {
+			build.add(strip().add(align(text(label).rgb(127, 127, 127).bold(), 100).right(), value));
+		}
 	}
 
 	protected void header(String label, Object value) {
