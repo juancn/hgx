@@ -49,6 +49,8 @@ public class JavaLexer
             unread();
             if(isIdStart(c)) {
                 token = parseId();
+			} else if(c == '@') {
+				token = parseAnnotation();
             } else if(c == '"') {
                 token = parseString();
             } else {
@@ -64,7 +66,19 @@ public class JavaLexer
         return token;
     }
 
-    private JavaToken parseString() throws ParseException
+	private JavaToken parseAnnotation() {
+		JavaToken token;
+		read();
+		char c = read();
+		while(isIdPart(c)) {
+			c = read();
+		}
+		unread();
+		token = makeToken(TokenType.ANNOTATION);
+		return token;
+	}
+
+	private JavaToken parseString() throws ParseException
     {
         char c = read();
         loop: while(c != '"') {

@@ -2,6 +2,7 @@ package codng.hgx.ui;
 
 public enum TokenType {
     ABSTRACT,
+    ANNOTATION,
     ASSIGN,
     BAND,
     BOOLEAN,

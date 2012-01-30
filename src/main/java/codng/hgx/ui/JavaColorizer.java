@@ -51,6 +51,8 @@ class JavaColorizer extends Colorizer {
 					case STRING:
 					case CHAR_LITERAL:
 						token.rgb(0,128,0).bold(); break;
+					case ANNOTATION:
+						token.rgb(128,128,0); break;
 					case INT_LITERAL:
 					case LONG_LITERAL:
 					case FLOAT_LITERAL:
