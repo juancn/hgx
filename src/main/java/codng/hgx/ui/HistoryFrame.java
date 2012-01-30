@@ -1,7 +1,9 @@
 package codng.hgx.ui;
 
+import codng.hgx.Cache;
 import codng.hgx.Cell;
 import codng.hgx.ChangeSet;
+import codng.hgx.Hg;
 import codng.hgx.History;
 import codng.hgx.Row;
 
@@ -233,7 +235,7 @@ public class HistoryFrame
 			changeSets = ChangeSet.loadFrom(new FileInputStream("/Users/juancn/history-case16146.log"));
 			ChangeSet.linkParents(changeSets);
 		} else {
-			changeSets = ChangeSet.loadFromCurrentDirectory();
+			changeSets = ChangeSet.filterBranch(Hg.branch(), ChangeSet.loadFromCurrentDirectory());
 		}
 		final History tb = new History(changeSets);
 		final HistoryFrame blah = new HistoryFrame("blah", tb.iterator());

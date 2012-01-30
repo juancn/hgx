@@ -46,15 +46,13 @@ public class RowViewer
 			hr();
 			try {
 				colorize(Cache.loadDiff(row));
-			} catch (IOException e) {
+			} catch (IOException | InterruptedException e) {
 				e.printStackTrace();
 			}
 		}
 	}
 
-	private void colorize(String diff) {
-		final StringReader sr = new StringReader(diff);
-		final BufferedReader br = new BufferedReader(sr);
+	private void colorize(BufferedReader br) {
 		try {
 			int oldStart = -1, newStart = -1;
 			
@@ -110,6 +108,12 @@ public class RowViewer
 			}
 		} catch (IOException e) {
 			throw new Error("This shouldn't happen!");
+		} finally {
+			try {
+				br.close();
+			} catch (IOException e) {
+				// Ignore
+			}
 		}
 	}
 

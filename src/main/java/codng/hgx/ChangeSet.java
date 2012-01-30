@@ -4,8 +4,6 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.PipedInputStream;
-import java.io.PipedOutputStream;
 import java.io.Serializable;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -51,14 +49,14 @@ public class ChangeSet
 		System.out.printf("\tCache load: %dms\n", end-start);
 
 		start = System.currentTimeMillis();
-		final PipedInputStream snk = new QuietPipedInputStream();
-		int since = changeSets.isEmpty() ? 0 : (int) last(changeSets).id.seqNo;
-		Callable<Integer> exitCode = new Command("hg", "log", "-r", since +":")
-				.redirectError(System.err)
-				.redirectOutput(new PipedOutputStream(snk))
-				.start();
 
-		final List<ChangeSet> updated = loadFrom(snk);
+		int since = changeSets.isEmpty() ? 0 : (int) last(changeSets).id.seqNo;
+		final Hg.AsyncCommand asyncCommand = Hg.log(since);
+
+		final List<ChangeSet> updated = loadFrom(asyncCommand.getOutput());
+
+		final Callable<Integer> exitCode = asyncCommand.getExitCode();
+
 		System.out.println("\t[hg log] exit code: " + exitCode.call());
 		end = System.currentTimeMillis();
 		System.out.printf("\t[hg log] took: %dms, retrieved %d entries\n", end-start, updated.size());
@@ -79,12 +77,10 @@ public class ChangeSet
 		Collections.reverse(changeSets);
 		
 		linkParents(changeSets);
-		
-		final List<ChangeSet> result = filterBranch(Hg.branch(), changeSets);
 		end = System.currentTimeMillis();
-		System.out.printf("\tUpdate and filtering: %dms\n", end-start);
+		System.out.printf("\tCache update and parent linking: %dms\n", end-start);
 		System.out.println("Done!");
-		return result;
+		return changeSets;
 	}
 
 	private static void verifyIntegrity(List<ChangeSet> changeSets) {
@@ -96,7 +92,7 @@ public class ChangeSet
 		}
 	}
 
-	private static List<ChangeSet> filterBranch(String branch, List<ChangeSet> changeSets) {
+	public static List<ChangeSet> filterBranch(String branch, List<ChangeSet> changeSets) {
 		final List<ChangeSet> result = new ArrayList<>();
 		final Set<Id> unresolvedParents = new HashSet<>();
 		final Set<Id> inBranch = new HashSet<>();
@@ -106,6 +102,7 @@ public class ChangeSet
 				result.add(changeSet);
 				unresolvedParents.addAll(changeSet.parents);
 				unresolvedParents.remove(changeSet.id);
+				// Attempt to keep current branch to the left
 				Collections.sort(changeSet.parents, new Comparator<Id>() {
 					@Override
 					public int compare(Id o1, Id o2) {
@@ -219,17 +216,4 @@ public class ChangeSet
 	/** Thu Jan 12 09:54:28 2012 -0800 */
 	private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("EEE MMM d HH:mm:ss yyyy Z");
 
-	private static class QuietPipedInputStream extends PipedInputStream {
-		@Override
-		public int read() throws IOException {
-			try {
-				return super.read();
-			} catch (IOException e) {
-				if(e.getMessage().equals("Write end dead")) {
-					return -1;
-				}
-				throw e;
-			}
-		}
-	}
 }

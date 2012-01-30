@@ -50,6 +50,8 @@ public class RichTextView extends JComponent implements Scrollable {
 	protected Block endBlock;
 	protected Point selectionEnd;
 
+	private float avgLineHeight = 20;
+
 	public RichTextView() {
 		final MouseAdapter mouseAdapter = new MouseAdapter() {
 			@Override
@@ -92,7 +94,7 @@ public class RichTextView extends JComponent implements Scrollable {
 			protected Transferable createTransferable(JComponent c) {
 				return new Transferable() {
 					private final DataFlavor[] dataFlavors = {
-							new DataFlavor("text/plain", "Plaint text"),
+							new DataFlavor("text/plain", "Plain text"),
 					};
 					
 					@Override
@@ -107,11 +109,11 @@ public class RichTextView extends JComponent implements Scrollable {
 
 					@Override
 					public Object getTransferData(DataFlavor flavor) throws UnsupportedFlavorException, IOException {
-						final ByteArrayOutputStream out = new ByteArrayOutputStream();
-						final OutputStreamWriter writer = new OutputStreamWriter(out);
-						Cache.transfer(new StringReader(getSelectedText()), writer);
-						writer.close();
-						return new ByteArrayInputStream(out.toByteArray());
+						return serializeText(getSelectedText());
+					}
+
+					private Object serializeText(String selectedText) throws IOException {
+						return new ByteArrayInputStream(selectedText.getBytes("UTF-8"));
 					}
 				};
 			}
@@ -178,19 +180,22 @@ public class RichTextView extends JComponent implements Scrollable {
 	}
 
 	private void updateDimensions() {
-		float totalHeight = 0, maxWidth = 0, maxHeight = 0;
+		float totalHeight = 0, maxWidth = 0;
 		for (Strip line : lines) {
 			final float lineHeight = line.height();
 			line.position(0, totalHeight);
 			totalHeight += lineHeight;
-			maxHeight += max(maxHeight, totalHeight);
 			maxWidth = max(maxWidth, line.width());				
+		}
+		
+		if(!lines.isEmpty()) {
+			avgLineHeight = totalHeight / lines.size();
 		}
 		setPreferredSize(new Dimension((int)maxWidth, (int)totalHeight));
 	}
 
 	protected Block blockAt(float x, float y) {
-		return lines.get(lineAt(y)).blockAt(x);
+		return lines.get(clamp(lineAt(y))).blockAt(x);
 	}
 
 	private int lineAt(float y) {
@@ -214,12 +219,12 @@ public class RichTextView extends JComponent implements Scrollable {
 
 	@Override
 	public int getScrollableUnitIncrement(Rectangle visibleRect, int orientation, int direction) {
-		return 15;
+		return (int) avgLineHeight;
 	}
 
 	@Override
 	public int getScrollableBlockIncrement(Rectangle visibleRect, int orientation, int direction) {
-		return 500;
+		return (int) (getParent().getHeight() - avgLineHeight * 3);
 	}
 
 	@Override
@@ -301,13 +306,15 @@ public class RichTextView extends JComponent implements Scrollable {
 		final int y1 = clipBounds.y;
 		final int y2 = clipBounds.y + clipBounds.height;
 
+		// Clear background
+		g.setBackground(Color.WHITE);
+		g.clearRect(clipBounds.x, clipBounds.y, clipBounds.width, clipBounds.height);
+
 		float y = y1;
 		for (int i = lineAt(y1); i < lines.size() && y <= y2; i++) {
 			final Strip line = lines.get(i);
+			line.draw(g);
 			y = line.position.y;
-			if ( (y1 <= y && y <= y2) ) {
-				line.draw(g);
-			}
 		}
 	}
 
@@ -403,7 +410,9 @@ public class RichTextView extends JComponent implements Scrollable {
 		@Override
 		protected void draw(Graphics2D g) {
 			super.draw(g);
+			final Rectangle clipBounds = g.getClipBounds();
 			for (Block block : blocks) {
+				if(block.position.x > clipBounds.x+clipBounds.width) break;
 				block.draw(g);
 			}
 		}
@@ -450,7 +459,6 @@ public class RichTextView extends JComponent implements Scrollable {
 			final StringBuilder sb = new StringBuilder();
 			for (int i = 0; i < blocks.size(); i++) {
 				Block block = blocks.get(i);
-				if(i != 0) sb.append(' ');
 				sb.append(block);
 			}
 			return sb.toString(); 
@@ -533,7 +541,7 @@ public class RichTextView extends JComponent implements Scrollable {
 
 		@Override
 		public String toString() {
-			return text;
+			return hgap == 0?text : " " + text;
 		}
 	}
 
@@ -673,5 +681,9 @@ public class RichTextView extends JComponent implements Scrollable {
 		attributes.put(TextAttribute.FAMILY, "Lucida Grande");
 		attributes.put(TextAttribute.SIZE, 12);
 		return Font.getFont(attributes);
+	}
+
+	private static int clamp(int i) {
+		return i < 0 ? 0 : i;
 	}
 }
