@@ -126,22 +126,30 @@ public class RowViewer
 	}
 	
 	private Block blockAt(float x, float y) {
+		return lines.get(lineAt(y)).blockAt(x);
+	}
+
+	private int lineAt(float y) {
 		int index = Collections.binarySearch(lines, y, new Comparator<Object>() {
 			@Override
 			public int compare(Object o1, Object o2) {
-				return Float.compare(toFloat(o1), toFloat(o2)); 
+				return Float.compare(toFloat(o1), toFloat(o2));
 			}
 
 			private float toFloat(Object o) {
-				return o instanceof Float? (Float)o : ((Strip)o).position.y;
+				return o instanceof Float ? (Float) o : ((Block) o).position.y;
 			}
 		});
-		
+
 		if(index < 0) {
 			index = -index -1;
-		}
+		} 
+		
 		// We always select the next row, because position.y is at the top of the box, so we correct for that.
-		return lines.get(index == 0? index : index - 1).blockAt(x);
+		if (index != 0) {
+			index = index - 1;
+		}
+		return index;
 	}
 
 	@Override
@@ -296,19 +304,17 @@ public class RowViewer
 
 	private void render(Graphics2D g) {
 		g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-		float y = 0;
 		final Rectangle clipBounds = g.getClipBounds();
 		final int y1 = clipBounds.y;
 		final int y2 = clipBounds.y + clipBounds.height;
 
-		for (int i = 0; i < lines.size() && y <= y2; i++) {
+		float y = y1;
+		for (int i = lineAt(y1); i < lines.size() && y <= y2; i++) {
 			final Strip line = lines.get(i);
-
+			y = line.position.y;
 			if ( (y1 <= y && y <= y2) ) {
 				line.draw(g);
 			}
-
-			y += line.height();
 		}
 	}
 	
