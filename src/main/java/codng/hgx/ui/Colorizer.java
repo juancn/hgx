@@ -7,12 +7,12 @@ abstract class Colorizer {
 		this.rowViewer = rowViewer;
 	}
 
-	public abstract RowViewer.Strip colorizeLine(String line);
+	public abstract RichTextView.Strip colorizeLine(String line);
 	
 	public static final Colorizer plain(RowViewer rowViewer) {
 		return new Colorizer(rowViewer) {
 			@Override
-			public RowViewer.Strip colorizeLine(String line) {
+			public RichTextView.Strip colorizeLine(String line) {
 				return rowViewer.strip().add(rowViewer.code(line));
 			}
 		};

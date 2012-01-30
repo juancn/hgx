@@ -13,6 +13,7 @@ import java.io.ObjectOutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Reader;
 import java.io.StringWriter;
+import java.io.Writer;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -96,13 +97,17 @@ public class Cache {
 		final BufferedInputStream inputStream = new BufferedInputStream(new FileInputStream(file));
 		final Reader in = new BufferedReader(new InputStreamReader(inputStream, "UTF-8"));
 		final StringWriter out = new StringWriter();
+		transfer(in, out);
+		in.close();
+		return out.toString();
+	}
+
+	public static void transfer(Reader in, Writer out) throws IOException {
 		final char[] buffer = new char[512];
 		int read;
 		while ((read = in.read(buffer)) != -1) {
 			out.write(buffer, 0, read);
 		}
-		in.close();
-		return out.toString();
 	}
 
 	public static Object readObject(File file) throws IOException, ClassNotFoundException {
