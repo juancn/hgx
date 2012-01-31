@@ -22,16 +22,15 @@ public class ChangeSet
 {
 	public final Id id;
 	public final String branch;
-	public final String tag;
 	public final String user;
 	public final Date date;
 	public final String summary;
 	public final List<Id> parents = new ArrayList<>();
+	public final List<String> tags = new ArrayList<>();
 
-	ChangeSet(Id id, String branch, String tag, String user, Date date, String summary) {
+	ChangeSet(Id id, String branch, String user, Date date, String summary) {
 		this.id = id;
 		this.branch = branch;
-		this.tag = tag;
 		this.user = user;
 		this.date = date;
 		this.summary = summary;
@@ -138,11 +137,11 @@ public class ChangeSet
 		return new Formatter()
 				.format("id: %s\n", id)
 				.format("branch: %s\n", branch)
-				.format("tag: %s\n", tag)
 				.format("user: %s\n", user)
 				.format("date: %s\n", date)
 				.format("summary: %s\n", summary)
 				.format("parents: %s\n", parents)
+				.format("tags: %s\n", tags)
 				.toString();
 	}
 
@@ -179,12 +178,12 @@ public class ChangeSet
 	private static ChangeSet parse(List<Entry> entries) throws IOException, ParseException {
 		final Id id = Id.parse(firstOr(entries, "changeset", null));
 		final String branch = firstOr(entries, "branch", "");
-		final String tag = firstOr(entries, "tag", "");
 		final String user = firstOr(entries, "user", "");
 		final Date date = DATE_FORMAT.parse(firstOr(entries, "date", ""));
 		final String summary = firstOr(entries, "summary", "");
-		final ChangeSet changeSet = new ChangeSet(id, branch, tag, user, date, summary);
+		final ChangeSet changeSet = new ChangeSet(id, branch, user, date, summary);
 		changeSet.parents.addAll(parents(entries));
+		changeSet.tags.addAll(filter(entries, "tag"));
 		return changeSet;
 	}
 
@@ -193,6 +192,17 @@ public class ChangeSet
 		for (Entry entry : entries) {
 			if(entry.key.equals("parent")) {
 				result.add(Id.parse(entry.value));
+			}
+		}
+		return result;
+	}
+	
+	private static List<String> filter(List<Entry> entries, String key) {
+		// I desperately need Guava or something alike
+		final ArrayList<String> result = new ArrayList<>();
+		for (Entry entry : entries) {
+			if(entry.key.equals(key)) {
+				result.add(entry.value);
 			}
 		}
 		return result;

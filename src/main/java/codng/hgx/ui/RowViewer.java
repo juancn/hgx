@@ -83,8 +83,9 @@ public class RowViewer
 		header("Author:", changeSet.user);
 		header("Date:", changeSet.date);
 		header("Summary:", text(changeSet.summary).bold());
-		header("Parent:", changeSet.parents);
+		header("Parents:", changeSet.parents);
 		header("Branch:", text(changeSet.branch).bold());
+		if (!changeSet.tags.isEmpty()) header("Tags:", text(changeSet.tags).bold());
 		hr();
 	}
 
