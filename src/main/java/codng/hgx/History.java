@@ -21,27 +21,21 @@ public class History
 
 	@Override
 	public Iterator<Row> iterator() {
-		return new Iterator<Row>() {
+		return new NoRemoveIterator<Row>() {
 			final Iterator<ChangeSet> chIt = changeSets.iterator();
-			Row lastRow;
 			@Override
-			public boolean hasNext() {
-				return chIt.hasNext();
-			}
-
-			@Override
-			public Row next() {
-				if(lastRow == null) {
-					lastRow = new Row(chIt.next());
+			protected Row advance() {
+				final Row result;
+				if(chIt.hasNext()) {
+					if(element == null) {
+						result = new Row(chIt.next());
+					} else {
+						result = element.next(chIt.next());
+					}
 				} else {
-					lastRow = lastRow.next(chIt.next());
+					result = null;
 				}
-				return lastRow; 
-			}
-
-			@Override
-			public void remove() {
-				throw new UnsupportedOperationException();
+				return result;
 			}
 		};
 	}

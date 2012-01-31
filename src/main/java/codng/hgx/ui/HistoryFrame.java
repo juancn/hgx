@@ -6,42 +6,68 @@ import codng.hgx.Hg;
 import codng.hgx.History;
 import codng.hgx.Row;
 
+import javax.swing.Icon;
+import javax.swing.ImageIcon;
+import javax.swing.JButton;
+import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JList;
+import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
 import javax.swing.JTable;
+import javax.swing.JTextArea;
+import javax.swing.JTextField;
+import javax.swing.ListCellRenderer;
 import javax.swing.ListSelectionModel;
 import javax.swing.SwingUtilities;
+import javax.swing.SwingWorker;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
+import javax.swing.plaf.basic.BasicComboBoxUI;
 import javax.swing.table.TableCellRenderer;
+import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
+import java.awt.Dimension;
+import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.HeadlessException;
 import java.awt.Rectangle;
 import java.awt.RenderingHints;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.FileInputStream;
 import java.lang.reflect.InvocationTargetException;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class HistoryFrame 
 		extends JFrame 
 {
-	private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+	private String branch;
 	private JTable historyTable;
 	private JSplitPane split;
 	private RowViewer detail;
 
-	public HistoryFrame(String title, Iterator<Row> historyGen) throws HeadlessException {
-		super(title);
+	public HistoryFrame(String branch, Iterator<Row> historyGen) throws HeadlessException {
+		super(branch);
+		this.branch = branch;
 
 		final HistoryTableModel historyTableModel = new HistoryTableModel(historyGen);
 		historyTable = new JTable(historyTableModel);
@@ -156,7 +182,11 @@ public class HistoryFrame
 		split.setTopComponent(tableScrollPane);
 		final JScrollPane detailScrollPane = new JScrollPane(detail);
 		split.setBottomComponent(detailScrollPane);
-		getContentPane().add(split);
+
+//		final JPanel topPanel = new JPanel();
+//		createBranchCombo(topPanel);
+//		getContentPane().add(topPanel, BorderLayout.NORTH);
+		getContentPane().add(split, BorderLayout.CENTER);
 
 		addWindowListener(new WindowAdapter() {
 			@Override
@@ -184,6 +214,82 @@ public class HistoryFrame
 		});
 	}
 
+	private void createBranchCombo(JPanel topPanel) {
+		final JComboBox<String> combo = new JComboBox<>();
+		combo.setEditable(true);
+		combo.setUI(new BasicComboBoxUI() {
+			@Override
+			protected JButton createArrowButton() {
+				final JButton jButton = new JButton(new ImageIcon(getClass().getResource("search.png")));
+				jButton.setBorderPainted(false);
+				jButton.setBackground(Color.WHITE);
+				jButton.setForeground(Color.WHITE);
+				jButton.setContentAreaFilled(true);
+				jButton.setOpaque(true);
+				return jButton;
+			}
+
+			@Override
+			protected ListCellRenderer createRenderer() {
+				final ListCellRenderer renderer = super.createRenderer();
+				return new ListCellRenderer() {
+					@Override
+					public Component getListCellRendererComponent(JList jList, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+						final Component listCellRendererComponent = renderer.getListCellRendererComponent(jList, value, index, isSelected, cellHasFocus);
+						if(!isSelected) listCellRendererComponent.setBackground(Color.WHITE);						
+						return listCellRendererComponent;
+					}
+				};
+			}
+		});
+
+		final Dimension preferredSize = combo.getPreferredSize();
+		preferredSize.width = 200;
+		combo.setPreferredSize(preferredSize);
+		final JTextField editorComponent = (JTextField) combo.getEditor().getEditorComponent();
+		editorComponent.addKeyListener(new KeyAdapter() {
+			@Override
+			public void keyTyped(KeyEvent e) {
+				final String text = editorComponent.getText();
+				for (int i = 0; i < combo.getItemCount(); i++) {
+					String item =  combo.getItemAt(i);
+					if(item.startsWith(text)) {
+						combo.setSelectedIndex(i);
+						break;
+					}
+				}
+				combo.showPopup();
+			}
+		});
+
+		topPanel.add(new JLabel("Branch:"));
+		topPanel.add(combo);
+		combo.addItem(branch);
+		new SwingWorker<List<String>, Void>() {
+			@Override
+			protected List<String> doInBackground() throws Exception {
+				final ArrayList<String> result = new ArrayList<>();
+				for (Hg.Branch branch : Hg.branches()) {
+					result.add(branch.name);
+				}
+				Collections.sort(result);
+				return result;
+			}
+
+			@Override
+			protected void done() {
+				try {
+					final List<String> branches = get();
+					for (String b : branches) {
+						combo.addItem(b);
+					}
+				} catch (InterruptedException | ExecutionException e) {
+					e.printStackTrace();
+				}
+			}
+		}.execute();
+	}
+
 	private void doShow() throws InvocationTargetException, InterruptedException {
 		// Pick some pleasing proportions 
 		final double golden = 1.61803399;
@@ -204,16 +310,16 @@ public class HistoryFrame
 
 
 	public static void main(String[] args) throws Exception {
-		
 		final String branch;
 		final List<ChangeSet> changeSets;
 		if (args.length == 1 &&  "--debug".equals(args[0])) {
 			branch = "Debug";
-			changeSets = ChangeSet.loadFrom(new FileInputStream("/Users/juancn/history-case16146.log"));
+			changeSets = ChangeSet.filterBranch("case16146",ChangeSet.loadFrom(new FileInputStream("/Users/juancn/history.log")), false);
 			ChangeSet.linkParents(changeSets);
 		} else {
 			branch = Hg.branch();
-			changeSets = ChangeSet.filterBranch(branch, ChangeSet.loadFromCurrentDirectory());
+			final boolean branchOnly = args.length == 1 && "--branch-only".equals(args[0]);
+			changeSets = ChangeSet.filterBranch(branch, ChangeSet.loadFromCurrentDirectory(), branchOnly);
 		}
 		final History tb = new History(changeSets);
 		final HistoryFrame blah = new HistoryFrame(branch, tb.iterator());

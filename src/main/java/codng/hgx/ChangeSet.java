@@ -91,7 +91,7 @@ public class ChangeSet
 		}
 	}
 
-	public static List<ChangeSet> filterBranch(final String branch, List<ChangeSet> changeSets) {
+	public static List<ChangeSet> filterBranch(final String branch, List<ChangeSet> changeSets, boolean branchOnly) {
 		final List<ChangeSet> result = new ArrayList<>();
 		final Set<Id> unresolvedParents = new HashSet<>();
 		final Set<Id> inBranch = new HashSet<>();
@@ -125,7 +125,22 @@ public class ChangeSet
 				return (int) (o2.id.seqNo - o1.id.seqNo);
 			}
 		});
-		return result;
+
+		return branchOnly ? filterBranchOnly(branch, inBranch, result) : result;
+	}
+
+	private static List<ChangeSet> filterBranchOnly(String branch, Set<Id> inBranch, List<ChangeSet> result) {
+		int i = 0;
+		for (; i < result.size()-1; i++) {
+			ChangeSet current = result.get(i);
+			ChangeSet next = result.get(i+1);
+			if(!next.branch.equals(branch)) {
+				break;
+			}
+			current.parents.retainAll(inBranch);			
+		}
+
+		return result.subList(0, i+1);
 	}
 
 	private static <X> X last(List<X> list) {
