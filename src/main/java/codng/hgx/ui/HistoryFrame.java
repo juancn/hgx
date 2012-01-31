@@ -6,56 +6,38 @@ import codng.hgx.Hg;
 import codng.hgx.History;
 import codng.hgx.Row;
 
-import javax.swing.Icon;
-import javax.swing.ImageIcon;
-import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
-import javax.swing.JList;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
 import javax.swing.JTable;
-import javax.swing.JTextArea;
-import javax.swing.JTextField;
-import javax.swing.ListCellRenderer;
 import javax.swing.ListSelectionModel;
 import javax.swing.SwingUtilities;
 import javax.swing.SwingWorker;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
-import javax.swing.plaf.basic.BasicComboBoxUI;
 import javax.swing.table.TableCellRenderer;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
-import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.HeadlessException;
 import java.awt.Rectangle;
 import java.awt.RenderingHints;
-import java.awt.event.KeyAdapter;
-import java.awt.event.KeyEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.FileInputStream;
 import java.lang.reflect.InvocationTargetException;
-import java.net.URL;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class HistoryFrame 
 		extends JFrame 
@@ -183,9 +165,7 @@ public class HistoryFrame
 		final JScrollPane detailScrollPane = new JScrollPane(detail);
 		split.setBottomComponent(detailScrollPane);
 
-//		final JPanel topPanel = new JPanel();
-//		createBranchCombo(topPanel);
-//		getContentPane().add(topPanel, BorderLayout.NORTH);
+		getContentPane().add(createBranchPanel(), BorderLayout.NORTH);
 		getContentPane().add(split, BorderLayout.CENTER);
 
 		addWindowListener(new WindowAdapter() {
@@ -214,57 +194,14 @@ public class HistoryFrame
 		});
 	}
 
-	private void createBranchCombo(JPanel topPanel) {
-		final JComboBox<String> combo = new JComboBox<>();
-		combo.setEditable(true);
-		combo.setUI(new BasicComboBoxUI() {
-			@Override
-			protected JButton createArrowButton() {
-				final JButton jButton = new JButton(new ImageIcon(getClass().getResource("search.png")));
-				jButton.setBorderPainted(false);
-				jButton.setBackground(Color.WHITE);
-				jButton.setForeground(Color.WHITE);
-				jButton.setContentAreaFilled(true);
-				jButton.setOpaque(true);
-				return jButton;
-			}
-
-			@Override
-			protected ListCellRenderer createRenderer() {
-				final ListCellRenderer renderer = super.createRenderer();
-				return new ListCellRenderer() {
-					@Override
-					public Component getListCellRendererComponent(JList jList, Object value, int index, boolean isSelected, boolean cellHasFocus) {
-						final Component listCellRendererComponent = renderer.getListCellRendererComponent(jList, value, index, isSelected, cellHasFocus);
-						if(!isSelected) listCellRendererComponent.setBackground(Color.WHITE);						
-						return listCellRendererComponent;
-					}
-				};
-			}
-		});
-
-		final Dimension preferredSize = combo.getPreferredSize();
-		preferredSize.width = 200;
-		combo.setPreferredSize(preferredSize);
-		final JTextField editorComponent = (JTextField) combo.getEditor().getEditorComponent();
-		editorComponent.addKeyListener(new KeyAdapter() {
-			@Override
-			public void keyTyped(KeyEvent e) {
-				final String text = editorComponent.getText();
-				for (int i = 0; i < combo.getItemCount(); i++) {
-					String item =  combo.getItemAt(i);
-					if(item.startsWith(text)) {
-						combo.setSelectedIndex(i);
-						break;
-					}
-				}
-				combo.showPopup();
-			}
-		});
-
+	private JPanel createBranchPanel() {
+		final JPanel topPanel = new JPanel();
+		final JComboBox<String> comboBox = new SearchableCombo<>();
+		comboBox.setEnabled(false);
+		comboBox.setPreferredSize(new Dimension(200, comboBox.getPreferredSize().height));
 		topPanel.add(new JLabel("Branch:"));
-		topPanel.add(combo);
-		combo.addItem(branch);
+		topPanel.add(comboBox);
+		
 		new SwingWorker<List<String>, Void>() {
 			@Override
 			protected List<String> doInBackground() throws Exception {
@@ -279,15 +216,19 @@ public class HistoryFrame
 			@Override
 			protected void done() {
 				try {
-					final List<String> branches = get();
-					for (String b : branches) {
-						combo.addItem(b);
+					for (String b : get()) {
+						comboBox.addItem(b);
 					}
+					comboBox.setSelectedItem(branch);
+					comboBox.setEnabled(true);
 				} catch (InterruptedException | ExecutionException e) {
 					e.printStackTrace();
 				}
 			}
 		}.execute();
+		
+		
+		return topPanel;
 	}
 
 	private void doShow() throws InvocationTargetException, InterruptedException {

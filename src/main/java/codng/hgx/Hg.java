@@ -58,7 +58,7 @@ public class Hg {
 			if(!matcher.matches()) {
 				throw new IllegalArgumentException("Cannot parse: " + s);
 			}
-			return new Branch(matcher.group(1), Id.parse(matcher.group(2)), matcher.group(3) == null);
+			return new Branch(matcher.group(1).trim(), Id.parse(matcher.group(2)), matcher.group(3) == null);
 		}
 	}
 
