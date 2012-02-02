@@ -111,8 +111,6 @@ public class HistoryFrame
 
 					private void drawSummary(Graphics2D g, int cellSize, int xoff, int yoff, Row previousRow, Row currentRow) {
 						final int halfCell = cellSize / 2;
-						if (isSelected)
-							g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_OFF);
 
 						final int xbase = cellOffset(halfCell, xoff, currentRow.cells.size()) + cellSize;
 						int xlabel = 0;
@@ -126,8 +124,9 @@ public class HistoryFrame
 							g.fillRoundRect(xbase, 1, width + 6, getHeight() - 2, 5, 5);
 							g.setColor(labelColor.darker());
 							g.drawRoundRect(xbase, 1, width + 6, getHeight() - 2, 5, 5);
-							g.setColor(color);
+							g.setColor(Color.BLACK);
 							g.drawString(branch, xbase + 3, yoff + halfCell + g.getFont().getSize() / 2);
+							g.setColor(color);
 						}
 						g.drawString(currentRow.changeSet.summary, xbase + xlabel, yoff + halfCell + g.getFont().getSize() / 2);
 					}
@@ -178,7 +177,7 @@ public class HistoryFrame
 		historyTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
 			@Override
 			public void valueChanged(ListSelectionEvent e) {
-				if (!e.getValueIsAdjusting()) {
+				if (!e.getValueIsAdjusting() && historyTable.getSelectedRow() < historyTableModel.getRowCount()) {
 					detail.setRow((Row) historyTableModel.getValueAt(historyTable.getSelectedRow(), 0));
 					detail.scrollRectToVisible(new Rectangle());
 				}

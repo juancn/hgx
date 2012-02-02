@@ -130,6 +130,7 @@ public class ChangeSet
 	}
 
 	private static List<ChangeSet> filterBranchOnly(String branch, Set<Id> inBranch, List<ChangeSet> result) {
+		if(result.isEmpty()) return result;
 		int i = 0;
 		for (; i < result.size()-1; i++) {
 			ChangeSet current = result.get(i);
