@@ -164,7 +164,7 @@ public class HistoryFrame
 		final JScrollPane detailScrollPane = new JScrollPane(detail);
 		split.setBottomComponent(detailScrollPane);
 
-		getContentPane().add(createBranchPanel(), BorderLayout.NORTH);
+//		getContentPane().add(createBranchPanel(), BorderLayout.NORTH);
 		getContentPane().add(split, BorderLayout.CENTER);
 
 		addWindowListener(new WindowAdapter() {
@@ -302,16 +302,20 @@ public class HistoryFrame
 		}
 
 		private void parseOption() {
-			if(la().equals("-b") || la().equals("--branch")) {
-				consume();
-				branch = la();
-				consume();
-			} else if(la().equals("-B") || la().equals("--branch-only")) {
-				consume();
-				branchOnly = true;
-			} else if(la().equals("-D") || la().equals("--debug")) {
-				consume();
-				debug = true;
+			switch (la()) {
+				case "-b": case "--branch":
+					consume();
+					branch = la();
+					consume();
+					break;
+				case "-B": case "--branch-only":
+					consume();
+					branchOnly = true;
+					break;
+				case "-D": case "--debug":
+					consume();
+					debug = true;
+					break;
 			}
 		}
 	}

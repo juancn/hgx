@@ -52,6 +52,7 @@ public class RowViewer
 				final Row row = getRow();
 				@Override
 				public void run() {
+					Thread.currentThread().setPriority(Thread.MIN_PRIORITY);
 					addHeader(this.row.changeSet);
 					addDiff(this.row);
 					if(interrupted()) return;
