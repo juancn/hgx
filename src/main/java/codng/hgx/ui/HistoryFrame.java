@@ -248,18 +248,85 @@ public class HistoryFrame
 		});
 	}
 
+	static class CommandLine {
+		private final String[] args;
+		private int next;
+		private List<String> arguments = new ArrayList<>();
+		private String branch;
+		private boolean branchOnly;
+		private boolean debug;
+
+		CommandLine(String[] args) {
+			this.args = args;
+		}
+
+		public List<String> getArguments() {
+			return arguments;
+		}
+
+		public boolean isBranchOnly() {
+			return branchOnly;
+		}
+
+		public String getBranch() {
+
+			return branch;
+		}
+
+		public boolean isDebug() {
+			return debug;
+		}
+
+		private String la() {
+			return next < args.length ? args[next] : null;
+		}
+		
+		private void consume() {
+			++next;
+		}
+		
+		CommandLine parse() {
+			while (la() != null) {
+				if(la().equals("--"))  break;
+				else if(la().charAt(0) == '-') parseOption();
+				else {
+					arguments.add(la());
+					consume();
+				}
+			}
+			while (la() != null) {
+				arguments.add(la());
+				consume();
+			}
+			return this;
+		}
+
+		private void parseOption() {
+			if(la().equals("-b") || la().equals("--branch")) {
+				consume();
+				branch = la();
+				consume();
+			} else if(la().equals("-B") || la().equals("--branch-only")) {
+				consume();
+				branchOnly = true;
+			} else if(la().equals("-D") || la().equals("--debug")) {
+				consume();
+				debug = true;
+			}
+		}
+	}
 
 	public static void main(String[] args) throws Exception {
 		final String branch;
 		final List<ChangeSet> changeSets;
-		if (args.length == 1 &&  "--debug".equals(args[0])) {
+		final CommandLine cmdLine = new CommandLine(args).parse();
+		if (cmdLine.isDebug()) {
 			branch = "Debug";
-			changeSets = ChangeSet.filterBranch("case16146",ChangeSet.loadFrom(new FileInputStream("/Users/juancn/history.log")), false);
+			changeSets = ChangeSet.filterBranch("case16146",ChangeSet.loadFrom(new FileInputStream("/Users/juancn/Downloads/hg_log.txt")), false);
 			ChangeSet.linkParents(changeSets);
 		} else {
-			branch = Hg.branch();
-			final boolean branchOnly = args.length == 1 && "--branch-only".equals(args[0]);
-			changeSets = ChangeSet.filterBranch(branch, ChangeSet.loadFromCurrentDirectory(), branchOnly);
+			branch = cmdLine.getBranch() == null ? Hg.branch() : cmdLine.getBranch();
+			changeSets = ChangeSet.filterBranch(branch, ChangeSet.loadFromCurrentDirectory(), cmdLine.isBranchOnly());
 		}
 		final History tb = new History(changeSets);
 		final HistoryFrame blah = new HistoryFrame(branch, tb.iterator());
