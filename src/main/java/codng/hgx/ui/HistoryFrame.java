@@ -1,5 +1,6 @@
 package codng.hgx.ui;
 
+import codng.hgx.Cache;
 import codng.hgx.Cell;
 import codng.hgx.ChangeSet;
 import codng.hgx.Hg;
@@ -32,6 +33,9 @@ import java.awt.RenderingHints;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -276,7 +280,7 @@ public class HistoryFrame
 		public boolean isDebug() {
 			return debug;
 		}
-
+		
 		private String la() {
 			return next < args.length ? args[next] : null;
 		}
@@ -287,16 +291,12 @@ public class HistoryFrame
 		
 		CommandLine parse() {
 			while (la() != null) {
-				if(la().equals("--"))  break;
+				if(la().equals("--"))  { consume(); break; }
 				else if(la().charAt(0) == '-') parseOption();
-				else {
-					arguments.add(la());
-					consume();
-				}
+				else { consumeArg(); }
 			}
 			while (la() != null) {
-				arguments.add(la());
-				consume();
+				consumeArg();
 			}
 			return this;
 		}
@@ -316,7 +316,15 @@ public class HistoryFrame
 					consume();
 					debug = true;
 					break;
+				default:
+					consumeArg();
+					break;
 			}
+		}
+
+		private void consumeArg() {
+			arguments.add(la());
+			consume();
 		}
 	}
 
@@ -324,6 +332,12 @@ public class HistoryFrame
 		final String branch;
 		final List<ChangeSet> changeSets;
 		final CommandLine cmdLine = new CommandLine(args).parse();
+		
+		if(!cmdLine.getArguments().isEmpty()) {
+			usage();
+			System.exit(1);
+		}
+		
 		if (cmdLine.isDebug()) {
 			branch = "Debug";
 			changeSets = ChangeSet.filterBranch("case16146",ChangeSet.loadFrom(new FileInputStream("/Users/juancn/Downloads/hg_log.txt")), false);
@@ -335,5 +349,16 @@ public class HistoryFrame
 		final History tb = new History(changeSets);
 		final HistoryFrame blah = new HistoryFrame(branch, tb.iterator());
 		blah.doShow();
+	}
+
+	private static void usage() {
+		try {
+			final OutputStreamWriter out = new OutputStreamWriter(System.out);
+			Cache.transfer(new InputStreamReader(HistoryFrame.class.getResourceAsStream("help.txt"), "UTF-8"), out);
+			out.flush();
+		} catch (IOException e) {
+			// Shouldn't happen but log just in case
+			e.printStackTrace();
+		}
 	}
 }
