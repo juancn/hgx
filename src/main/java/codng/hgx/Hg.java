@@ -1,5 +1,8 @@
 package codng.hgx;
 
+import codng.util.Command;
+import codng.util.NoRemoveIterator;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -24,7 +27,7 @@ public class Hg {
 						@Override
 						protected Branch advance() {
 							try {
-								return Branch.parse(br.readLine());
+								return finishIfNull(Branch.parse(br.readLine()));
 							} catch (IOException e) {
 								throw (NoSuchElementException)new NoSuchElementException("I/O error").initCause(e);
 							}

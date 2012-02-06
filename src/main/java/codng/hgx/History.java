@@ -1,5 +1,7 @@
 package codng.hgx;
 
+import codng.util.NoRemoveIterator;
+
 import java.awt.Color;
 import java.awt.Frame;
 import java.awt.Graphics;
@@ -33,7 +35,7 @@ public class History
 						result = element.next(chIt.next());
 					}
 				} else {
-					result = null;
+					result = finished();
 				}
 				return result;
 			}
