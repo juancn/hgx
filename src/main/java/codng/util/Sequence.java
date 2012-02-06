@@ -2,8 +2,10 @@ package codng.util;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 
 /**
  * An ordered sequence of elements.
@@ -41,9 +43,15 @@ public interface Sequence<T>
 
 	/**
 	 * Returns a copy of this sequence as a list.
-	 * @return a copy of this sequence
+	 * @return a copy of this sequence as a set.
 	 */
 	List<T> asList();
+
+	/**
+	 * Returns a copy of this sequence as a set.
+	 * @return a copy of this sequence as a set.
+	 */
+	Set<T> asSet();
 
 	/**
 	 * A default Sequence implementation.
@@ -126,6 +134,13 @@ public interface Sequence<T>
 		@Override
 		public List<T> asList() {
 			final ArrayList<T> list = new ArrayList<>();
+			for (T t : this) list.add(t);
+			return list;
+		}
+
+		@Override
+		public Set<T> asSet() {
+			final HashSet<T> list = new HashSet<>();
 			for (T t : this) list.add(t);
 			return list;
 		}

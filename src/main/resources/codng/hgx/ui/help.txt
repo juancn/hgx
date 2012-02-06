@@ -3,4 +3,6 @@ USAGE hgx [options]
             Filter displayed history by branch. If not specified, it will use the current branch
     -B, --branch-only
             Constrain output only to commit in the selected branch
+    -t, --trunk
+            Same as --branch-only -branch trunk
 

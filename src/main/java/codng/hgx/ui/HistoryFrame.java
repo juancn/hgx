@@ -316,6 +316,11 @@ public class HistoryFrame
 					consume();
 					debug = true;
 					break;
+				case "-t": case "--trunk":
+					consume();
+					branchOnly = true;
+					branch = "trunk";
+					break;
 				default:
 					consumeArg();
 					break;
