@@ -21,6 +21,7 @@ import javax.swing.SwingWorker;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.table.TableCellRenderer;
+import java.awt.BasicStroke;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
@@ -28,10 +29,16 @@ import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.HeadlessException;
+import java.awt.Paint;
+import java.awt.PaintContext;
 import java.awt.Rectangle;
 import java.awt.RenderingHints;
+import java.awt.Stroke;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.awt.geom.AffineTransform;
+import java.awt.geom.Rectangle2D;
+import java.awt.image.ColorModel;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -46,6 +53,7 @@ import java.util.concurrent.ExecutionException;
 public class HistoryFrame 
 		extends JFrame 
 {
+	private static final BasicStroke THICK = new BasicStroke(2.0f);
 	private String branch;
 	private JTable historyTable;
 	private JSplitPane split;
@@ -79,37 +87,57 @@ public class HistoryFrame
 						g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
 						final Row previousRow = rowIndex > 0 ? (Row) historyTableModel.getValueAt(rowIndex - 1, columnIndex) : null;
-						int bullet = drawLines(g, cellSize, 0, 0, previousRow, row);
-						if (rowIndex + 1 < historyTableModel.getRowCount()) {
-							drawLines(g, cellSize, 0, getHeight(), row, (Row) historyTableModel.getValueAt(rowIndex + 1, columnIndex));
-						}
+						int bullet = drawLines(g, previousRow, cellSize);
 						drawBullet(g, cellSize, 0, bullet);
 						drawSummary(g, cellSize, 0, 0, previousRow, row);
 					}
 
-					private int drawLines(Graphics2D g, int cellSize, int xoff, int yoff, Row previousRow, Row currentRow) {
+					private int drawLines(Graphics2D g, Row previousRow, int cellSize) {
+						final boolean hasNext = rowIndex + 1 < historyTableModel.getRowCount();
+						// First draw the highlights
+						final int bullet = drawLines(g, cellSize, 0, 0, previousRow, row, true);
+						if (hasNext) {
+							drawLines(g, cellSize, 0, getHeight(), row, (Row) historyTableModel.getValueAt(rowIndex + 1, columnIndex), true);
+						}
+
+						// then the solid line
+						drawLines(g, cellSize, 0, 0, previousRow, row, false);
+						if (hasNext) {
+							drawLines(g, cellSize, 0, getHeight(), row, (Row) historyTableModel.getValueAt(rowIndex + 1, columnIndex), false);
+						}
+						return bullet;
+					}
+
+					private int drawLines(Graphics2D g, int cellSize, int xoff, int yoff, Row previousRow, Row currentRow, boolean highlight) {
 						final int halfCell = cellSize / 2;
+						final int y0 = yoff + getHeight() / 2;
+						final int y1 = yoff - getHeight() / 2;
+
 						int bulletOff = -1;
 						final Color c = g.getColor();
-						g.setColor(new Color(0, 200, 0));
+						final Stroke stroke = g.getStroke();
 						for (int j = 0; j < currentRow.cells.size(); j++) {
-							int x = cellOffset(halfCell, xoff, j);
-							Cell cell = currentRow.cells.get(j);
+							final int x = cellOffset(halfCell, xoff, j);
+							final Cell cell = currentRow.cells.get(j);
 							if (cell.id.equals(currentRow.changeSet.id)) {
 								assert bulletOff == -1;
 								bulletOff = x;
 							}
-
 							if (previousRow != null) {
 								for (Cell child : cell.children) {
 									final int prev = previousRow.cellIndex(child);
 									if (prev != -1) {
-										g.drawLine(x + halfCell, yoff + getHeight() / 2, cellOffset(halfCell, xoff, prev) + halfCell, yoff - getHeight() / 2);
+										if (highlight) {
+											g.setColor(branchColor(child.branch));
+											g.setStroke(THICK);
+										}
+										g.drawLine(x + halfCell, y0, cellOffset(halfCell, xoff, prev) + halfCell, y1);
 									}
 								}
 							}
 						}
 						g.setColor(c);
+						g.setStroke(stroke);
 						return bulletOff;
 					}
 

@@ -5,6 +5,7 @@ import java.util.List;
 
 public class Cell {
 	public final Id id;
+	public String branch = "";
 	public final List<Cell> children = new ArrayList<>();
 
 	Cell(Id id, Cell child) {
@@ -34,6 +35,7 @@ public class Cell {
 	}
 
 	public void addChild(Cell cell) {
+		branch = cell.branch;
 		children.add(cell);
 	}
 }

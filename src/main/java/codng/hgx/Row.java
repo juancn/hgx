@@ -25,6 +25,7 @@ public class Row {
 		Cell branch = null;
 		for (Cell cell : cells) {
 			if(cell.id.equals(this.changeSet.id)) {
+				cell.branch = changeSet.branch;
 				for (Id parent : this.changeSet.parents) {
 					branch = updateBranch(changeSet, result, branch, cell, parent);
 				}
