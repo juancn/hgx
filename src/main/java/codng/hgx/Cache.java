@@ -1,5 +1,7 @@
 package codng.hgx;
 
+import codng.util.Cast;
+
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
@@ -39,7 +41,7 @@ public class Cache {
 		final File file = new File(CACHE_DIR, id + ".history");
 		if(file.exists()) {
 			try {
-				return cast(readObject(file));
+				return Cast.force(readObject(file));
 			} catch (IOException|ClassNotFoundException e) {
 				file.delete();
 				e.printStackTrace();
@@ -60,11 +62,6 @@ public class Cache {
 			e.printStackTrace();
 		}
 		if(temp != null) temp.renameTo(file);
-	}
-
-	@SuppressWarnings("unchecked")
-	private static <X> X cast(Object o) {
-		return (X)o;
 	}
 
 	public static void writeText(InputStream inputStream, File file) throws IOException {
