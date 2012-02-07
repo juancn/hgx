@@ -76,7 +76,7 @@ public class Cache {
 		final File temp = File.createTempFile("diff", "tmp", parentFile);
 		final FileOutputStream fos = new FileOutputStream(temp);
 		final OutputStreamWriter out = new OutputStreamWriter(new BufferedOutputStream(fos), "UTF-8");
-		transfer(new InputStreamReader(inputStream), out);
+		transfer(new InputStreamReader(inputStream, "UTF-8"), out);
 		out.close();
 		temp.renameTo(file);
 	}

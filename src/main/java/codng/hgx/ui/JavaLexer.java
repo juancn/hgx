@@ -6,7 +6,6 @@ import java.util.Map;
 import java.util.TreeMap;
 
 
-@SuppressWarnings({"StatementWithEmptyBody"})
 public class JavaLexer
 {
     public CharSequence text;
