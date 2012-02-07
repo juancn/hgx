@@ -49,27 +49,6 @@ public class Row {
 			counts.put(cell.id, count);
 		}
 
-//		for (Map.Entry<Id, Integer> entry : counts.entrySet()) {
-//			if(entry.getValue() > 1) {
-//				Id id = entry.getKey();
-//				int first = -1;
-//				for (int i = 0; i < result.size(); i++) {
-//					Cell cell = result.get(i);
-//					if(cell.id.equals(id)) {
-//						if(first == -1) {
-//							first = i;
-//						} else {
-//							final Cell left = result.get(i - 1);
-//							if(!cell.id.equals(left.id)){
-//								result.set(i, left);
-//								result.set(i-1, cell);
-//							}
-//						}
-//					}
-//				}
-//			}
-//		}
-		
 		return new Row(changeSet, result);
 	}
 
