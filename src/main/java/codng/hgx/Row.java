@@ -37,18 +37,6 @@ public class Row {
 			result.add(new Cell(changeSet.id, null));
 		}
 
-		// Group similar
-		Map<Id, Integer> counts = new HashMap<>();
-		for (Cell cell : result) {
-			Integer count = counts.get(cell.id);
-			if(count == null) {
-				count = 1;
-			} else {
-				++count;
-			}
-			counts.put(cell.id, count);
-		}
-
 		return new Row(changeSet, result);
 	}
 
