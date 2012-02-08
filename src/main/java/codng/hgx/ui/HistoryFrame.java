@@ -29,16 +29,13 @@ import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.HeadlessException;
-import java.awt.Paint;
-import java.awt.PaintContext;
+import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.RenderingHints;
 import java.awt.Stroke;
+import java.awt.Toolkit;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.awt.geom.AffineTransform;
-import java.awt.geom.Rectangle2D;
-import java.awt.image.ColorModel;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -49,11 +46,13 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
+import java.util.prefs.BackingStoreException;
+import java.util.prefs.Preferences;
 
 public class HistoryFrame 
 		extends JFrame 
 {
-	private static final BasicStroke THICK = new BasicStroke(2.0f);
+	private static final double GOLDEN = 1.61803399;
 	private String branch;
 	private JTable historyTable;
 	private JSplitPane split;
@@ -202,6 +201,7 @@ public class HistoryFrame
 		addWindowListener(new WindowAdapter() {
 			@Override
 			public void windowClosing(WindowEvent e) {
+				savePrefs();
 				System.exit(0);
 			}
 		});
@@ -219,12 +219,14 @@ public class HistoryFrame
 		addWindowListener(new WindowAdapter() {
 			@Override
 			public void windowClosing(WindowEvent e) {
+				savePrefs();
 				// Just die
 				System.exit(0);
 			}
 		});
 	}
 
+	@SuppressWarnings("UnusedDeclaration")
 	private JPanel createBranchPanel() {
 		final JPanel topPanel = new JPanel();
 		final JComboBox<String> comboBox = new SearchableCombo<>();
@@ -263,21 +265,60 @@ public class HistoryFrame
 	}
 
 	private void doShow() throws InvocationTargetException, InterruptedException {
-		// Pick some pleasing proportions 
-		final double golden = 1.61803399;
-		setSize((int) (900*golden),900);
+		loadPrefs();
+		setSize(getUserSize());
+		final Point location = getUserLocation();
+		if (location.x >= 0) { setLocation(location); }
 		setVisible(true);
 		SwingUtilities.invokeAndWait(new Runnable() {
 			@Override
 			public void run() {
-				setLocationRelativeTo(null);
+				if (location.x < 0) {
+					setLocationRelativeTo(null);
+				}
 				historyTable.getColumnModel().getColumn(0).setPreferredWidth(900);
-				split.setDividerLocation(1 - (1 / golden));
+				split.setDividerLocation(1 - (1 / GOLDEN));
 				detail.setPreferredSize(getSize());
 				// Select the first row
 				historyTable.getSelectionModel().setSelectionInterval(0, 0);
 			}
 		});
+	}
+
+	private void loadPrefs() {
+		try {
+			PREFERENCES.sync();
+		} catch (BackingStoreException e) {
+			e.printStackTrace();
+		}
+	}
+
+	private void savePrefs() {
+		final Point location = getLocation();
+		PREFERENCES.putInt("location.x", location.x);
+		PREFERENCES.putInt("location.y", location.y);
+		final Dimension size = getSize();
+		PREFERENCES.putInt("size.width", size.width);
+		PREFERENCES.putInt("size.height", size.height);
+		try {
+			PREFERENCES.flush();
+		} catch (BackingStoreException e) {
+			e.printStackTrace();
+		}
+	}
+
+	private Dimension getUserSize() {
+		final Dimension size = new Dimension();
+		size.width = PREFERENCES.getInt("size.width", (int) (900* GOLDEN));
+		size.height = PREFERENCES.getInt("size.height", 900);
+		return size;
+	}
+
+	private Point getUserLocation() {
+		final Point location = new Point();
+		location.x = PREFERENCES.getInt("location.x", -1);
+		location.y = PREFERENCES.getInt("location.y", -1);
+		return location;
 	}
 
 	static class CommandLine {
@@ -394,4 +435,7 @@ public class HistoryFrame
 			e.printStackTrace();
 		}
 	}
+
+	private static final Preferences PREFERENCES = Preferences.userNodeForPackage(HistoryFrame.class);
+	private static final BasicStroke THICK = new BasicStroke(2.0f);
 }
