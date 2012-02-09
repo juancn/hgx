@@ -1,5 +1,5 @@
 USAGE hgx [options]
-    -b, --branch  <branch name>
+    -b, --branch  <branch name regex>
             Filter displayed history by branch. If not specified, it will use the current branch
     -B, --branch-only
             Constrain output only to commit in the selected branch

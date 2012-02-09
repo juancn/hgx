@@ -96,8 +96,8 @@ public class ChangeSet
 		final Set<Id> unresolvedParents = new HashSet<>();
 		final Set<Id> inBranch = new HashSet<>();
 		for (ChangeSet changeSet : changeSets) {
-			if(changeSet.branch.equals(branch)) inBranch.add(changeSet.id);
-			if(changeSet.branch.equals(branch) || unresolvedParents.contains(changeSet.id)) {
+			if(matchBranch(branch, changeSet)) inBranch.add(changeSet.id);
+			if(matchBranch(branch, changeSet) || unresolvedParents.contains(changeSet.id)) {
 				result.add(changeSet);
 				unresolvedParents.addAll(changeSet.parents);
 				unresolvedParents.remove(changeSet.id);
@@ -118,8 +118,8 @@ public class ChangeSet
 		Collections.sort(result, new Comparator<ChangeSet>() {
 			@Override
 			public int compare(ChangeSet o1, ChangeSet o2) {
-				final boolean b1 = o1.branch.equals(branch);
-				final boolean b2 = o2.branch.equals(branch);
+				final boolean b1 = matchBranch(branch, o1);
+				final boolean b2 = matchBranch(branch, o2);
 				if(b1 && !b2) return -1;
 				if(!b1 && b2) return  1;
 				return (int) (o2.id.seqNo - o1.id.seqNo);
@@ -129,13 +129,17 @@ public class ChangeSet
 		return branchOnly ? filterBranchOnly(branch, inBranch, result) : result;
 	}
 
+	private static boolean matchBranch(String branch, ChangeSet changeSet) {
+		return changeSet.branch.matches(branch);
+	}
+
 	private static List<ChangeSet> filterBranchOnly(String branch, Set<Id> inBranch, List<ChangeSet> result) {
 		if(result.isEmpty()) return result;
 		int i = 0;
 		for (; i < result.size()-1; i++) {
 			ChangeSet current = result.get(i);
 			ChangeSet next = result.get(i+1);
-			if(!next.branch.equals(branch)) {
+			if(!matchBranch(branch, next)) {
 				break;
 			}
 			current.parents.retainAll(inBranch);			
@@ -253,5 +257,5 @@ public class ChangeSet
 
 	/** Thu Jan 12 09:54:28 2012 -0800 */
 	private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("EEE MMM d HH:mm:ss yyyy Z");
-
+	private static final long serialVersionUID = 0;
 }
