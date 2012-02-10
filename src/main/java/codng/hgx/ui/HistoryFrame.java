@@ -414,8 +414,8 @@ public class HistoryFrame
 		
 		if (cmdLine.isDebug()) {
 			branch = "Debug";
-			changeSets = ChangeSet.filterBranch("case16146",ChangeSet.loadFrom(new FileInputStream("/Users/juancn/Downloads/hg_log.txt")), false);
-			ChangeSet.linkParents(changeSets);
+//			changeSets = ChangeSet.filterBranch("case16146",ChangeSet.loadFrom(new FileInputStream("/Users/juancn/Downloads/hg_log.txt")), false);
+			changeSets = ChangeSet.filterBranch("default", ChangeSet.linkParents(ChangeSet.loadFrom(new FileInputStream("/Users/juancn/Downloads/jcarder/jcarder.log"))), false);
 		} else {
 			branch = cmdLine.getBranch() == null ? Hg.branch() : cmdLine.getBranch();
 			changeSets = ChangeSet.filterBranch(branch, ChangeSet.loadFromCurrentDirectory(), cmdLine.isBranchOnly());

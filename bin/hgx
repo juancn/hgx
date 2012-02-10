@@ -4,6 +4,7 @@
 BIN_DIR=$(dirname $(file="$0"; while [ -L $file ]; do file=$(readlink "$file"); done; echo $file))
 JAR_FILE="$BIN_DIR/../target/hgx-1.0-SNAPSHOT.jar"
 
-#java -cp $JAR_FILE codng.hgx.Main
 java -cp $JAR_FILE -ea codng.hgx.ui.HistoryFrame $@
+# java -Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=5005 -cp $JAR_FILE -ea codng.hgx.ui.HistoryFrame $@
+
 

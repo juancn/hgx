@@ -184,7 +184,7 @@ public class ChangeSet
 		return changeSets;
 	}
 
-	public static void linkParents(List<ChangeSet> changeSets) {
+	public static List<ChangeSet> linkParents(final List<ChangeSet> changeSets) {
 		//Link parents
 		for (int i = 0; i < changeSets.size()-1; i++) {
 			final ChangeSet current = changeSets.get(i);
@@ -193,11 +193,12 @@ public class ChangeSet
 				current.parents.add(next.id);
 			}
 		}
+		return changeSets;
 	}
 
 	private static ChangeSet parse(List<Entry> entries) throws IOException, ParseException {
 		final Id id = Id.parse(firstOr(entries, "changeset", null));
-		final String branch = firstOr(entries, "branch", "");
+		final String branch = firstOr(entries, "branch", "default");
 		final String user = firstOr(entries, "user", "");
 		final Date date = DATE_FORMAT.parse(firstOr(entries, "date", ""));
 		final String summary = firstOr(entries, "summary", "");
@@ -257,5 +258,5 @@ public class ChangeSet
 
 	/** Thu Jan 12 09:54:28 2012 -0800 */
 	private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("EEE MMM d HH:mm:ss yyyy Z");
-	private static final long serialVersionUID = 0;
+	private static final long serialVersionUID = 1;
 }
