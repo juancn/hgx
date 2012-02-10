@@ -384,6 +384,7 @@ public class JavaLexer
         reserved("true", TokenType.TRUE);
         reserved("false", TokenType.FALSE);
         reserved("abstract",TokenType.ABSTRACT);
+        reserved("assert",TokenType.ASSERT);
         reserved("boolean",TokenType.BOOLEAN);
         reserved("break",TokenType.BREAK);
         reserved("byte",TokenType.BYTE);
