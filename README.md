@@ -41,7 +41,7 @@ You can see command line options by running the classic:
     hgx --help
 
 
-Cveats and Limitations
+Caveats and Limitations
 ----------------------
 
 This is tested mainly on (my) Mac, on other OSes, your mileage may vary. This is a Quick and Dirty™ implementation, and is buggy and incomplete.
