@@ -14,6 +14,7 @@ import java.util.Date;
 import java.util.Formatter;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 import java.util.concurrent.Callable;
 
@@ -257,6 +258,6 @@ public class ChangeSet
 	}
 
 	/** Thu Jan 12 09:54:28 2012 -0800 */
-	private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("EEE MMM d HH:mm:ss yyyy Z");
+	private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("EEE MMM d HH:mm:ss yyyy Z", Locale.ENGLISH);
 	private static final long serialVersionUID = 1;
 }
