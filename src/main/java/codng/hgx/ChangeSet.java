@@ -84,8 +84,8 @@ public class ChangeSet
 				changeSets.addAll(updated);
 				from = 0;
 			} else {
-				changeSets.addAll(updated.subList(1, updated.size()));
 				from = changeSets.size()-1;
+				changeSets.addAll(updated.subList(1, updated.size()));
 			}
 			linkParents(from, changeSets);
 
@@ -104,7 +104,7 @@ public class ChangeSet
 		verifyIntegrity(changeSets);
 		Collections.reverse(changeSets);
 		
-		System.out.printf("\tCache update and parent linking: %dms\n", partial.elapsed());
+		System.out.printf("\tHistory update and parent linking: %dms\n", partial.elapsed());
 		System.out.printf("Done! Took %dms\n", total.elapsed());
 		return changeSets;
 	}
