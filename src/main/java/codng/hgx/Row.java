@@ -1,17 +1,21 @@
 package codng.hgx;
 
+import codng.util.DefaultFunction;
+import codng.util.Function;
+import codng.util.Sequence;
+
 import java.util.ArrayList;
 import java.util.Formatter;
-import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.List;
-import java.util.Map;
+
+import static codng.util.Sequences.asSequence;
 
 public class Row {
 	public final ChangeSet changeSet;
 	public final List<Cell> cells;
 
-	Row(ChangeSet changeSet) {
+	private Row(ChangeSet changeSet) {
 		this(changeSet, new ArrayList<Cell>());
 		cells.add(new Cell(changeSet.id, null));
 	}
@@ -19,8 +23,23 @@ public class Row {
 		this.changeSet = changeSet;
 		this.cells = cells;
 	}
+
+	public static Sequence<Row> fromChangeSets(final Iterable<ChangeSet> changesets) {
+		return asSequence(changesets).map(new DefaultFunction<ChangeSet, Row>() {
+			Row last;
+			@Override
+			public Row apply(final ChangeSet changeSet) {
+				if(last == null) {
+					last = new Row(changeSet);
+				} else {
+					last = last.next(changeSet);
+				}
+				return last;
+			}
+		});
+	}
 	
-	Row next(ChangeSet changeSet) {
+	private Row next(ChangeSet changeSet) {
 		final List<Cell> result = new ArrayList<>();
 		Cell branch = null;
 		for (Cell cell : cells) {
