@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 import java.util.concurrent.Callable;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class ChangeSet 
 		implements Serializable 
@@ -78,20 +79,31 @@ public class ChangeSet
 		partial.reset();
 		if(!updated.isEmpty()) {
 			assert changeSets.isEmpty() || updated.get(0).id.equals(last(changeSets).id);
+			final int from;
 			if (changeSets.isEmpty()) {
 				changeSets.addAll(updated);
+				from = 0;
 			} else {
 				changeSets.addAll(updated.subList(1, updated.size()));
+				from = changeSets.size()-1;
 			}
-			Cache.saveHistory(id, changeSets);
-			Cache.saveLastRevision(id, (int) last(changeSets).id.seqNo);
-		}
+			linkParents(from, changeSets);
 
+			// Save updated cache in background
+			final AtomicReference<ArrayList<ChangeSet>> cache = new AtomicReference<>(new ArrayList<>(changeSets));
+			new Thread("Cache updater") {
+				@Override
+				public void run() {
+					final ArrayList<ChangeSet> changeSets = cache.get();
+					Cache.saveHistory(id, changeSets);
+					Cache.saveLastRevision(id, (int) last(changeSets).id.seqNo);
+					System.out.println("Cache updated.");
+				}
+			}.start();
+		}
 		verifyIntegrity(changeSets);
-		
 		Collections.reverse(changeSets);
 		
-		linkParents(changeSets);
 		System.out.printf("\tCache update and parent linking: %dms\n", partial.elapsed());
 		System.out.printf("Done! Took %dms\n", total.elapsed());
 		return changeSets;
@@ -199,13 +211,14 @@ public class ChangeSet
 		return changeSets;
 	}
 
-	public static List<ChangeSet> linkParents(final List<ChangeSet> changeSets) {
+
+	private static List<ChangeSet> linkParents(int from, final List<ChangeSet> changeSets) {
 		//Link parents
-		for (int i = 0; i < changeSets.size()-1; i++) {
-			final ChangeSet current = changeSets.get(i);
-			final ChangeSet next = changeSets.get(i + 1);
-			if(current.parents.isEmpty()) {
-				current.parents.add(next.id);
+		for (int i = from; i < changeSets.size()-1; i++) {
+			final ChangeSet child = changeSets.get(i + 1);
+			final ChangeSet parent = changeSets.get(i);
+			if(child.parents.isEmpty()) {
+				child.parents.add(parent.id);
 			}
 		}
 		return changeSets;

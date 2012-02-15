@@ -26,7 +26,7 @@ public class Cache {
 
 	public static BufferedReader loadDiff(Row row) throws IOException, InterruptedException {
 		final String key = row.changeSet.parents.get(0).hash + "-" + row.changeSet.id.hash;
-		final File file = new File(CACHE_DIR, key);
+		final File file = new File(CACHE_DIR, key + ".diff");
 		if(!file.exists()) {
 			final Hg.AsyncCommand command = Hg.diff(row.changeSet.parents.get(0).hash, row.changeSet.id.hash);
 			writeText(command.getOutput(), file);
