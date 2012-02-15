@@ -4,6 +4,7 @@ import codng.util.DefaultFunction;
 import codng.util.DefaultPredicate;
 import codng.util.Sequence;
 import codng.util.Sequences;
+import codng.util.StopWatch;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -45,28 +46,36 @@ public class ChangeSet
 	public static List<ChangeSet> loadFromCurrentDirectory() throws Exception {
 		final String id = Hg.id();
 
+		final StopWatch total = new StopWatch(), partial = new StopWatch();
+
 		System.out.println("Loading history...");
-		long start, end;
-		
-		start = System.currentTimeMillis();
-		final List<ChangeSet> changeSets = Cache.loadHistory(id);
-		end = System.currentTimeMillis();
-		System.out.printf("\tCache load: %dms\n", end-start);
+		total.reset();
+		int since = Cache.loadLastRevision(id);
 
-		start = System.currentTimeMillis();
-
-		int since = changeSets.isEmpty() ? 0 : (int) last(changeSets).id.seqNo;
+		// Trigger hg log in the background, while we load the history
 		final Hg.AsyncCommand asyncCommand = Hg.log(since);
 
-		final List<ChangeSet> updated = loadFrom(asyncCommand.getOutput());
+		final List<ChangeSet> changeSets;
 
+		// Load the cached history
+		if (since > 0) {
+			partial.reset();
+			changeSets = Cache.loadHistory(id);
+			System.out.printf("\tCache load: %dms\n", partial.elapsed());
+		} else {
+			changeSets = new ArrayList<>();
+		}
+
+		// Fetch the results of hg log
+		partial.reset();
+		final List<ChangeSet> updated = loadFrom(asyncCommand.getOutput());
 		final Callable<Integer> exitCode = asyncCommand.getExitCode();
 
 		System.out.println("\t[hg log] exit code: " + exitCode.call());
-		end = System.currentTimeMillis();
-		System.out.printf("\t[hg log] took: %dms, retrieved %d entries\n", end-start, updated.size());
-		
-		start = System.currentTimeMillis();
+		System.out.printf("\t[hg log] took (in parallel): %dms, retrieved %d entries\n", partial.elapsed(), updated.size());
+
+		// And merge with cached history
+		partial.reset();
 		if(!updated.isEmpty()) {
 			assert changeSets.isEmpty() || updated.get(0).id.equals(last(changeSets).id);
 			if (changeSets.isEmpty()) {
@@ -75,6 +84,7 @@ public class ChangeSet
 				changeSets.addAll(updated.subList(1, updated.size()));
 			}
 			Cache.saveHistory(id, changeSets);
+			Cache.saveLastRevision(id, (int) last(changeSets).id.seqNo);
 		}
 
 		verifyIntegrity(changeSets);
@@ -82,9 +92,8 @@ public class ChangeSet
 		Collections.reverse(changeSets);
 		
 		linkParents(changeSets);
-		end = System.currentTimeMillis();
-		System.out.printf("\tCache update and parent linking: %dms\n", end-start);
-		System.out.println("Done!");
+		System.out.printf("\tCache update and parent linking: %dms\n", partial.elapsed());
+		System.out.printf("Done! Took %dms\n", total.elapsed());
 		return changeSets;
 	}
 

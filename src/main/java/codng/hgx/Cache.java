@@ -5,6 +5,8 @@ import codng.util.Cast;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -52,7 +54,7 @@ public class Cache {
 
 	public static void saveHistory(String id, List<ChangeSet> history) {
 		final File file = new File(CACHE_DIR, id + ".history");
-		
+		file.getParentFile().mkdirs(); // Ensure parent exists
 		File temp = null;
 		try {
 			temp = File.createTempFile("diff", "tmp", CACHE_DIR);
@@ -62,6 +64,33 @@ public class Cache {
 			e.printStackTrace();
 		}
 		if(temp != null) temp.renameTo(file);
+	}
+
+	public static void saveLastRevision(String id, int revision) {
+		final File file = new File(CACHE_DIR, id + ".last");
+
+		File temp = null;
+		try {
+			temp = File.createTempFile("diff", "tmp", CACHE_DIR);
+			writeObject(revision, temp);
+		} catch (IOException e) {
+			if(temp != null) temp.delete();
+			e.printStackTrace();
+		}
+		if(temp != null) temp.renameTo(file);
+	}
+
+	public static int loadLastRevision(String id) {
+		final File file = new File(CACHE_DIR, id + ".last");
+		if(file.exists()) {
+			try {
+				return Cast.force(readObject(file));
+			} catch (IOException|ClassNotFoundException e) {
+				file.delete();
+				e.printStackTrace();
+			}
+		}
+		return 0;
 	}
 
 	public static void writeText(InputStream inputStream, File file) throws IOException {
@@ -111,5 +140,17 @@ public class Cache {
 		final Object result = in.readObject();
 		in.close();
 		return result;
+	}
+
+	public static <T> T deepCopy(T value) {
+		try {
+			final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+			final ObjectOutputStream out = new ObjectOutputStream(baos);
+			out.writeObject(value);
+			out.close();
+			return Cast.force(new ObjectInputStream(new ByteArrayInputStream(baos.toByteArray())).readObject());
+		} catch (IOException  | ClassNotFoundException e) {
+			throw new Error(e);
+		}
 	}
 }
