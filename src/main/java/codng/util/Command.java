@@ -15,6 +15,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 
+/**
+ * Utility class to launch external programs and capture the output.
+ */
 public class Command
 {
     //~ Instance fields ......................................................................................

@@ -1,6 +1,7 @@
 package codng.hgx;
 
 import codng.util.Command;
+import codng.util.DefaultSequence;
 import codng.util.NoRemoveIterator;
 import codng.util.Sequence;
 
@@ -18,7 +19,7 @@ import java.util.regex.Pattern;
 
 public class Hg {
 	public static Sequence<Branch> branches() {
-		return new Sequence.Default<Branch>() {
+		return new DefaultSequence<Branch>() {
 			@Override
 			public Iterator<Branch> iterator() {
 				try {

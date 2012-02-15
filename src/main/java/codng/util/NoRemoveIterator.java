@@ -3,6 +3,11 @@ package codng.util;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
+/**
+ * Iterator that does not support remove.
+ * Subclasses can override the 'advance()' method, calling 'finished()' to signal that no more elements are available.
+ * @param <T> element type
+ */
 public abstract class NoRemoveIterator<T>
 	implements Iterator<T>
 {

@@ -6,31 +6,18 @@ package codng.util;
  * @param <Y> the function's image (i.e. result type)
  */
 public interface Function<X,Y> {
+	/**
+	 * Applies this function to the parameter x
+	 * @param x function parameter
+	 * @return the result of applying this function to x
+	 */
 	Y apply(X x);
-	<Z> Function<X, Z> compose(Function<Y, Z> other);
-	
-	public static abstract class Default<X,Y> 
-			implements Function<X, Y> {
-		@Override
-		public <Z> Function<X, Z> compose(final Function<Y, Z> other) {
-			final Default<X, Y> self = this;
-			return new Default<X,Z>() {
-				@Override
-				public Z apply(X x) {
-					return other.apply(self.apply(x));
-				}
-			};
-		}
-		
-		public static <T> Function<T,T> identity() {
-			return Cast.force(IDENTITY_CONST);
-		}
-		
-		private static final Function<Object, Object> IDENTITY_CONST = new Default<Object, Object>() {
-			@Override
-			public Object apply(Object o) {
-				return o;
-			}
-		};
-	}
+
+	/**
+	 * Given two functions: f(x) and g(x) computes f(g(x)) (assuming this function is f)
+	 * @param g Y->Z function
+	 * @param <Z> image of g
+	 * @return the composition: f(g(x))
+	 */
+	<Z> Function<X, Z> compose(Function<Y, Z> g);
 }

@@ -2,8 +2,11 @@ package codng.util;
 
 import java.util.Iterator;
 
+/**
+ * A sequence of integers in the specified range
+ */
 public class Range
-		extends Sequence.Default<Integer> 
+		extends DefaultSequence<Integer>
 {
 	private final int from;
 	private final int to;

@@ -1,5 +1,10 @@
 package codng.hgx;
 
+import codng.util.DefaultFunction;
+import codng.util.DefaultPredicate;
+import codng.util.Sequence;
+import codng.util.Sequences;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -205,7 +210,7 @@ public class ChangeSet
 		final String summary = firstOr(entries, "summary", "");
 		final ChangeSet changeSet = new ChangeSet(id, branch, user, date, summary);
 		changeSet.parents.addAll(parents(entries));
-		changeSet.tags.addAll(filter(entries, "tag"));
+		for(String tag : filter(entries, "tag")) changeSet.tags.add(tag);
 		return changeSet;
 	}
 
@@ -219,15 +224,18 @@ public class ChangeSet
 		return result;
 	}
 	
-	private static List<String> filter(List<Entry> entries, String key) {
-		// I desperately need Guava or something alike
-		final ArrayList<String> result = new ArrayList<>();
-		for (Entry entry : entries) {
-			if(entry.key.equals(key)) {
-				result.add(entry.value);
+	private static Sequence<String> filter(final List<Entry> entries, final String key) {
+		return Sequences.asSequence(entries).filter(new DefaultPredicate<Entry>(){
+			@Override
+			public boolean apply(Entry entry) {
+				return entry.key.equals(key);
 			}
-		}
-		return result;
+		}).map(new DefaultFunction<Entry, String>(){
+			@Override
+			public String apply(Entry entry) {
+				return entry.value;
+			}
+		});
 	}
 
 	private static String firstOr(List<Entry> entries, String key, String alternative) {
