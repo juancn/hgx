@@ -36,12 +36,14 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static java.lang.Math.max;
 
 public class RichTextView extends JComponent implements Scrollable {
 	private final List<Strip> lines = new ArrayList<>();
-	private final List<Strip> build = new ArrayList<>();
+	protected final List<Strip> build = new ArrayList<>();
 	protected Block startBlock;
 	protected Point selectionStart;
 	protected Block endBlock;
@@ -488,6 +490,7 @@ public class RichTextView extends JComponent implements Scrollable {
 		}
 	}
 
+	private static final Pattern TAB_PATTERN = Pattern.compile("\t", Pattern.LITERAL);
 	public class Text extends Block<RowViewer.Text> {
 		private final String text;
 		private float vgap = 5;
@@ -500,7 +503,7 @@ public class RichTextView extends JComponent implements Scrollable {
 
 		Text(String text) {
 			// Quick & Dirty fix for tabs
-			this.text = text.replace("\t", "    ");
+			this.text = TAB_PATTERN.matcher(text).replaceAll("    ");
 		}
 
 		public RowViewer.Text bold() {
