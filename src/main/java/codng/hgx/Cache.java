@@ -29,11 +29,14 @@ public class Cache {
 		final File file = new File(CACHE_DIR, key + ".diff");
 		if(!file.exists()) {
 			final Hg.AsyncCommand command = Hg.diff(row.changeSet.parents.get(0).hash, row.changeSet.id.hash);
-			writeText(command.getOutput(), file);
 			try {
-				command.getExitCode().call();
-			} catch (Exception e) {
-				throw new Error(e);
+				writeText(command.getOutput(), file);
+			} finally {
+				try {
+					command.getExitCode().call();
+				} catch (Exception e) {
+					throw new Error(e);
+				}
 			}
 		}
 		return readText(file);

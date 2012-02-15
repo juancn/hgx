@@ -9,6 +9,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.InterruptedIOException;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
 import java.util.Iterator;
@@ -88,8 +89,12 @@ public class Hg {
 		public int read() throws IOException {
 			try {
 				return super.read();
+			} catch (InterruptedIOException e) {
+				// Close the stream to avoid stalling the other endpoint
+				close();
+				throw e;
 			} catch (IOException e) {
-				if(e.getMessage().equals("Write end dead")) {
+				if(e.getMessage() != null && e.getMessage().equals("Write end dead")) {
 					return -1;
 				}
 				throw e;

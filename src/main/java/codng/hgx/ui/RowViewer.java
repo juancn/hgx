@@ -93,7 +93,7 @@ public class RowViewer
 	private void addDiff(final Row row) {
 		try {
 			colorize(Cache.loadDiff(row));
-		} catch (IOException | InterruptedException e) {
+		} catch (IOException | InterruptedException | RuntimeException e) {
 			e.printStackTrace();
 		}
 	}

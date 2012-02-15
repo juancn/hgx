@@ -139,9 +139,14 @@ public class Command
         return args(Arrays.asList(args));
     }
 
-    private static StreamTransfer asyncTransfer(InputStream in, OutputStream out)
+	@Override
+	public String toString() {
+		return command.toString();
+	}
+
+	private StreamTransfer asyncTransfer(InputStream in, OutputStream out)
     {
-        StreamTransfer streamTransfer = new StreamTransfer(in, out);
+        StreamTransfer streamTransfer = new StreamTransfer(toString(), in, out);
         streamTransfer.start();
         return streamTransfer;
     }
@@ -349,8 +354,9 @@ public class Command
         private final InputStream  in;
         private final OutputStream out;
 
-        public StreamTransfer(InputStream in, OutputStream out)
+        public StreamTransfer(String name, InputStream in, OutputStream out)
         {
+			super(name);
             this.in = in;
             this.out = out;
         }
