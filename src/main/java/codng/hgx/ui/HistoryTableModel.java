@@ -19,8 +19,8 @@ public class HistoryTableModel implements TableModel {
 
 	public HistoryTableModel(Iterator<Row> historyIt) {
 		this.historyIt = historyIt;
-		//Load the first 100 rows
-		loadUpTo(100);
+		//Load the first 1000 rows
+		loadUpTo(1000);
 	}
 
 	private Row getRow(int index) {

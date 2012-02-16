@@ -3,6 +3,10 @@ package codng.util;
 public class StopWatch {
 	private long start;
 
+	public StopWatch() {
+		reset();
+	}
+
 	public long reset() {
 		return start = System.currentTimeMillis();
 	}

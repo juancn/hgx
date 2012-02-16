@@ -3,6 +3,9 @@ package codng.hgx.ui;
 import codng.hgx.Cache;
 import codng.hgx.ChangeSet;
 import codng.hgx.Row;
+import codng.util.DefaultPredicate;
+import codng.util.Predicate;
+import codng.util.StopWatch;
 
 import javax.swing.SwingUtilities;
 import java.io.BufferedReader;
@@ -46,7 +49,8 @@ public class RowViewer
 		clear();
 		if(row != null) {
 			addHeader(row.changeSet);
-			line().add(text("Loading...").rgb(200, 200, 200).bold().size(14));
+			final Text loading = text("Loading...").rgb(200, 200, 200).bold().size(14);
+			line().add(loading);
 			finishBuild();
 			lastUpdate = scheduler.schedule(new Runnable() {
 				final Row row = getRow();
@@ -54,7 +58,19 @@ public class RowViewer
 				public void run() {
 					Thread.currentThread().setPriority(Thread.MIN_PRIORITY);
 					addHeader(this.row.changeSet);
-					addDiff(this.row);
+					addDiff(this.row, new DefaultPredicate<String>() {
+						@Override
+						public boolean apply(final String status) {
+							SwingUtilities.invokeLater(new Runnable() {
+								@Override
+								public void run() {
+									loading.text(status);
+									repaint();
+								}
+							});
+							return true;
+						}
+					});
 					if(interrupted()) return;
 					try {
 						SwingUtilities.invokeAndWait(new Runnable() {
@@ -90,22 +106,26 @@ public class RowViewer
 		hr();
 	}
 
-	private void addDiff(final Row row) {
+	private void addDiff(final Row row, final Predicate<String> status) {
 		try {
-			colorize(Cache.loadDiff(row));
+			colorize(Cache.loadDiff(row), status);
 		} catch (IOException | InterruptedException | RuntimeException e) {
 			e.printStackTrace();
 		}
 	}
 
-	private void colorize(BufferedReader br) {
+	private void colorize(BufferedReader br, final Predicate<String> status) {
 		try {
 			int oldStart = -1, newStart = -1;
 			
 			boolean skipDiff = false;
 			Colorizer colorizer = Colorizer.plain(this);
+			int lineCount = 0;
 			for(String line = br.readLine(); line != null && !interrupted(); line = br.readLine())  {
-
+				++lineCount;
+				if(lineCount > 0 && lineCount % 1000 == 0) {
+					status.apply(String.format("Loading... (syntax highlighting, %s lines processed)", lineCount));
+				}
 				if(line.startsWith("diff")) {
 					skipDiff = false;
 					final Matcher matcher = DIFF_PATTERN.matcher(line);

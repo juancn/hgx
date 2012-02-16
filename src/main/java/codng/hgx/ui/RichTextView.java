@@ -1,5 +1,7 @@
 package codng.hgx.ui;
 
+import codng.util.StopWatch;
+
 import javax.swing.Action;
 import javax.swing.JComponent;
 import javax.swing.KeyStroke;
@@ -492,7 +494,7 @@ public class RichTextView extends JComponent implements Scrollable {
 
 	private static final Pattern TAB_PATTERN = Pattern.compile("\t", Pattern.LITERAL);
 	public class Text extends Block<RowViewer.Text> {
-		private final String text;
+		private String text;
 		private float vgap = 5;
 		private float hgap = 5;
 		
@@ -502,6 +504,10 @@ public class RichTextView extends JComponent implements Scrollable {
 		private int size = 12;
 
 		Text(String text) {
+			text(text);
+		}
+
+		public void text(String text) {
 			// Quick & Dirty fix for tabs
 			this.text = TAB_PATTERN.matcher(text).replaceAll("    ");
 		}
@@ -527,15 +533,11 @@ public class RichTextView extends JComponent implements Scrollable {
 		}
 
 		private FontMetrics fontMetrics() {
-			return getGraphics().getFontMetrics(font());
+			return RichTextView.this.fontMetrics(monospaced, bold, italic, size);
 		}
 
 		private Font font() {
-			Font font = monospaced ? RichTextView.monospacedFont() : RichTextView.variableFont();
-			if (bold) font = font.deriveFont(Font.BOLD);
-			if (italic) font = font.deriveFont(Font.ITALIC);
-			if (size != font.getSize()) font = font.deriveFont((float)size);
-			return font;
+			return RichTextView.this.font(monospaced, bold, italic, size);
 		}
 
 		@Override
@@ -696,6 +698,36 @@ public class RichTextView extends JComponent implements Scrollable {
 		protected abstract float toFloat(Block block);
 	}
 
+	private Map<Integer, Font> fontCache = new HashMap<>(); 
+	private Font font(boolean monospaced, boolean bold, boolean italic, int size) {
+		final int key = (monospaced?1<<30:0)
+				      | (bold      ?1<<29:0)
+				      | (italic    ?1<<28:0)
+				      | size;
+
+		Font font = fontCache.get(key);
+		if(font == null) {
+			font = monospaced ? RichTextView.monospacedFont() : RichTextView.variableFont();
+			if (bold) font = font.deriveFont(Font.BOLD);
+			if (italic) font = font.deriveFont(Font.ITALIC);
+			font = font.deriveFont((float)size);
+			fontCache.put(key, font);
+		}
+		return font;
+	}
+
+	private Map<Font, FontMetrics> fontMetricsCache = new HashMap<>();
+	private FontMetrics fontMetrics(boolean monospaced, boolean bold, boolean italic, int size) {
+		final Font font = font(monospaced, bold, italic, size);
+		FontMetrics fontMetrics = fontMetricsCache.get(font);
+		if(fontMetrics == null) {
+			fontMetrics = getGraphics().getFontMetrics(font);
+			fontMetricsCache.put(font, fontMetrics);
+		}
+		return fontMetrics;
+	}
+
+	
 	private static Font monospacedFont() {
 		Map<TextAttribute, Object> attributes = new HashMap<>();
 		attributes.put(TextAttribute.FAMILY, OS_X ? "Monaco" : "Courier");
