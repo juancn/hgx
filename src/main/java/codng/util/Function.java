@@ -14,7 +14,7 @@ public interface Function<X,Y> {
 	Y apply(X x);
 
 	/**
-	 * Given two functions: f(x) and g(x) computes f(g(x)) (assuming this function is f)
+	 * Given two functions: f(x) and g(x) computes g(f(x)) (assuming this function is f)
 	 * @param g Y->Z function
 	 * @param <Z> image of g
 	 * @return the composition: f(g(x))

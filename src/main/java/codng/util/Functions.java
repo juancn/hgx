@@ -12,13 +12,13 @@ public class Functions {
 	};
 
 	/**
-	 * Given two functions: f(x) and g(x) computes f(g(x))
+	 * Given two functions: f(x) and g(x) computes g(f(x))
 	 * @param f X->Y function
 	 * @param g Y->Z function
 	 * @param <X> domain of f
 	 * @param <Y> image of f and domain of g
 	 * @param <Z> image of g
-	 * @return the composition: f(g(x))
+	 * @return the composition: g(f(x))
 	 */
 	public static <X, Y, Z> Function<X, Z> compose(final Function<X, Y> f, final Function<Y, Z> g) {
 		return new DefaultFunction<X,Z>() {
