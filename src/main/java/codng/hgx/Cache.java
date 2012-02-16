@@ -7,6 +7,7 @@ import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -18,6 +19,8 @@ import java.io.ObjectOutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Reader;
 import java.io.Writer;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -27,6 +30,27 @@ public class Cache {
 	public static BufferedReader loadDiff(Row row) throws IOException, InterruptedException {
 		final File file = ensureCached(row);
 		return readText(file);
+	}
+	
+	private static File repositoryRoot() {
+		final File cwd = new File(System.getProperty("user.dir"));
+		for(File f = cwd; f != null; f = f.getParentFile()) {
+			if(new File(f, ".hg").isDirectory()) {
+				return f;
+			}
+		}
+		return null;
+	}
+	
+	public static String repositoryId() {
+		try {
+			final MessageDigest md5 = MessageDigest.getInstance("MD5");
+			final byte[] digest = md5.digest(repositoryRoot().getCanonicalFile().getPath().getBytes("UTF-8"));
+			final DataInputStream dis = new DataInputStream(new ByteArrayInputStream(digest));
+			return Long.toString(dis.readLong() & 0x7FFF_FFFF_FFFF_FFFFL, 36);
+		} catch (NoSuchAlgorithmException | IOException e) {
+			throw new Error(e);
+		}
 	}
 
 	public static File ensureCached(Row row) throws IOException, InterruptedException {

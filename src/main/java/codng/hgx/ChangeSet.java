@@ -45,7 +45,7 @@ public class ChangeSet
 	}
 
 	public static List<ChangeSet> loadFromCurrentDirectory() throws Exception {
-		final String id = Hg.id();
+		final String id = Cache.repositoryId();
 
 		final StopWatch total = new StopWatch(), partial = new StopWatch();
 
