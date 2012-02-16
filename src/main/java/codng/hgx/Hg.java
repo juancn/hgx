@@ -80,8 +80,8 @@ public class Hg {
 		return new AsyncCommand("hg", "log", "-r", since +":").invoke();
 	}
 
-	static AsyncCommand diff(String from, String to) throws IOException, InterruptedException {
-		return new AsyncCommand("hg", "diff", "--git", "-r", from, "-r", to).invoke();
+	static AsyncCommand diff(String rev) throws IOException, InterruptedException {
+		return new AsyncCommand("hg", "diff", "--git", "-c", rev).invoke();
 	}
 
 	private static class QuietPipedInputStream extends PipedInputStream {

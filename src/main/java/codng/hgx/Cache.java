@@ -25,10 +25,14 @@ public class Cache {
 	private static final File CACHE_DIR = new File(System.getProperty("user.home"), ".hgx");
 
 	public static BufferedReader loadDiff(Row row) throws IOException, InterruptedException {
-		final String key = row.changeSet.parents.get(0).hash + "-" + row.changeSet.id.hash;
-		final File file = new File(CACHE_DIR, key + ".diff");
+		final File file = ensureCached(row);
+		return readText(file);
+	}
+
+	public static File ensureCached(Row row) throws IOException, InterruptedException {
+		final File file = new File(CACHE_DIR, row.changeSet.id.hash + ".diff");
 		if(!file.exists()) {
-			final Hg.AsyncCommand command = Hg.diff(row.changeSet.parents.get(0).hash, row.changeSet.id.hash);
+			final Hg.AsyncCommand command = Hg.diff(row.changeSet.id.hash);
 			try {
 				writeText(command.getOutput(), file);
 			} finally {
@@ -39,7 +43,7 @@ public class Cache {
 				}
 			}
 		}
-		return readText(file);
+		return file;
 	}
 
 	public static List<ChangeSet> loadHistory(String id) {
