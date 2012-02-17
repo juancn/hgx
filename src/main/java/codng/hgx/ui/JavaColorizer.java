@@ -65,7 +65,10 @@ class JavaColorizer extends Colorizer {
 
 			}
 		} catch (ParseException e) {
-			e.printStackTrace();
+			synchronized (System.err) {
+				System.err.println("Line: " + line);
+				e.printStackTrace();
+			}
 			return strip.add(text(line));
 		}
 		return strip;

@@ -101,6 +101,7 @@ public class JavaLexer
                 case '5':
                 case '6':
                 case '7':
+                case 'u': // TODO: these are not properly parsed, but it's unnecessary for syntax highlighting
                     break;
                 default:
                     throw new ParseException("Unrecognized escape sequence", -1);
