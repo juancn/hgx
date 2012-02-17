@@ -62,7 +62,7 @@ class JavaColorizer extends Colorizer {
 						break;
 				}
 
-				if(JavaLexer.isReserved(current.getText())) token.color(Colors.RESERVED);
+				if(JavaLexer.isReserved(current.getText())) token.color(Colors.KEYWORD);
 			}
 		} catch (ParseException e) {
 			synchronized (System.err) {

@@ -10,7 +10,7 @@ public class Colors {
 	public static final Color STRING_LITERAL = color("string",0, 128, 0);
 	public static final Color ANNOTATION = color("annotation",128, 128, 0);
 	public static final Color NUMBER = color("number",0, 0, 255);
-	public static final Color RESERVED = color("reserved",0, 0, 128);
+	public static final Color KEYWORD = color("keyword",0, 0, 128);
 
 	// Informational
 	public static final Color WARNING = color("warning",255, 0, 0);
@@ -19,7 +19,7 @@ public class Colors {
 
 	// Background
 	public static final Color REMOVED_BG = color("background.removed",255, 238, 238);
-	public static final Color ADDED_BG = color("background.added",221, 255, 221);
+	public static final Color LINE_ADDED_BG = color("background.added",221, 255, 221);
 	public static final Color FILE_BG = color("background.file",220, 220, 250);
 	public static final Color LINE_NO_BG = color("background.line-no",250, 250, 250);
 

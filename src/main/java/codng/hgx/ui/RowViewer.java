@@ -7,7 +7,6 @@ import codng.util.DefaultPredicate;
 import codng.util.Predicate;
 
 import javax.swing.SwingUtilities;
-import java.awt.Color;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
@@ -165,7 +164,7 @@ public class RowViewer
 					numbered(oldStart, -1, colorizer.colorizeLine(line).background(Colors.REMOVED_BG));
 					++oldStart;
 				} else if(line.startsWith("+")) {
-					numbered(-1, newStart, colorizer.colorizeLine(line).background(Colors.ADDED_BG));
+					numbered(-1, newStart, colorizer.colorizeLine(line).background(Colors.LINE_ADDED_BG));
 					++newStart;
 				} else if(!skipDiff) {
 					numbered(oldStart, newStart, colorizer.colorizeLine(line));
