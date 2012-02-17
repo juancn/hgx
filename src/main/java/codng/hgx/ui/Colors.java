@@ -30,6 +30,7 @@ public class Colors {
 	private static Color parse(final String key, final Color defaultColor) {
 		final String property = System.getProperty(key);
 		if (property != null) {
+			// Values are of the form "rgb(255,0,0)"
 			final Matcher matcher = Pattern.compile("rgb\\(\\s*(\\d+)\\s*,\\s*(\\d+)\\s*,\\s*(\\d+)\\s*\\)").matcher(property);
 			if(matcher.matches()) {
 				return new Color(Integer.parseInt(matcher.group(1)),Integer.parseInt(matcher.group(2)), Integer.parseInt(matcher.group(3)));
