@@ -18,7 +18,7 @@ abstract class Colorizer {
 				
 				if(chopped.length() > MAX_LINE_LENGTH) {
 					chopped = chopped.substring(0, MAX_LINE_LENGTH);
-					strip.add(rowViewer.text("(truncated)").bold().rgb(255, 0, 0));
+					strip.add(rowViewer.text("(truncated)").bold().color(Colors.WARNING));
 				}
 
 				while(chopped.length() > TEXT_BLOCK_CUTOFF) {

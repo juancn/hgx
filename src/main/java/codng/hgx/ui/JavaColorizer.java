@@ -3,7 +3,7 @@ package codng.hgx.ui;
 import java.text.ParseException;
 
 class JavaColorizer extends Colorizer {
-	
+
 	private boolean unterminatedComment;
 	JavaColorizer(RowViewer rowViewer) {
 		super(rowViewer);
@@ -21,10 +21,10 @@ class JavaColorizer extends Colorizer {
 			if(unterminatedComment) {
 				final int terminator = line.indexOf("*/");
 				if(terminator == -1) {
-					strip.add(text(line).rgb(128, 128, 128).italic());
+					strip.add(text(line).color(Colors.COMMENT).italic());
 					return strip;
 				} else {
-					strip.add(text(line.substring(0, terminator + 2)).rgb(128, 128, 128).italic());
+					strip.add(text(line.substring(0, terminator + 2)).color(Colors.COMMENT).italic());
 					line = line.substring(terminator+2);
 					unterminatedComment = false;
 				}
@@ -47,22 +47,22 @@ class JavaColorizer extends Colorizer {
 					case ML_COMMENT:
 						if(!current.getText().toString().endsWith("*/")) unterminatedComment = true;
 					case SL_COMMENT:
-						token.rgb(128,128,128).italic(); break;
+						token.color(Colors.COMMENT).italic(); break;
 					case STRING:
 					case CHAR_LITERAL:
-						token.rgb(0,128,0).bold(); break;
+						token.color(Colors.STRING_LITERAL).bold(); break;
 					case ANNOTATION:
-						token.rgb(128,128,0); break;
+						token.color(Colors.ANNOTATION);
+						break;
 					case INT_LITERAL:
 					case LONG_LITERAL:
 					case FLOAT_LITERAL:
 					case DOUBLE_LITERAL:
-						token.rgb(0, 0, 255); break;
+						token.color(Colors.NUMBER);
+						break;
 				}
-				final boolean reserved = JavaLexer.isReserved(current.getText());
-				
-				if(reserved) token.rgb(0, 0, 128);;
 
+				if(JavaLexer.isReserved(current.getText())) token.color(Colors.RESERVED);
 			}
 		} catch (ParseException e) {
 			synchronized (System.err) {

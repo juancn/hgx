@@ -5,9 +5,9 @@ import codng.hgx.ChangeSet;
 import codng.hgx.Row;
 import codng.util.DefaultPredicate;
 import codng.util.Predicate;
-import codng.util.StopWatch;
 
 import javax.swing.SwingUtilities;
+import java.awt.Color;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
@@ -49,7 +49,7 @@ public class RowViewer
 		clear();
 		if(row != null) {
 			addHeader(row.changeSet);
-			final Text loading = text("Loading...").rgb(200, 200, 200).bold().size(14);
+			final Text loading = text("Loading...").color(Colors.LOADING).bold().size(14);
 			line().add(loading);
 			finishBuild();
 			lastUpdate = scheduler.schedule(new Runnable() {
@@ -131,7 +131,7 @@ public class RowViewer
 					final Matcher matcher = DIFF_PATTERN.matcher(line);
 					if(!matcher.matches()) throw new IllegalArgumentException("Malformed diff");
 					final String file = matcher.group(2);
-					line().add(align(text(file).vgap(10).bold(), getParent().getWidth()-50).background(220, 220, 250));
+					line().add(align(text(file).vgap(10).bold(), getParent().getWidth() - 50).background(Colors.FILE_BG));
 				
 					if(file.endsWith(".java")) {
 						colorizer = new JavaColorizer(this);
@@ -139,16 +139,16 @@ public class RowViewer
 						colorizer = Colorizer.plain(this);
 					}
 				} else if(line.startsWith("new file mode")) { // I should check that we're still in the header
-					line().add(code(line).rgb(127, 127, 127));
+					line().add(code(line).color(Colors.DE_EMPHASIZE));
 				} else if(line.startsWith("deleted file mode")) {
-					line().add(code(line).rgb(127, 127, 127));
-					line().add(text("File deleted").rgb(255, 0, 0));
+					line().add(code(line).color(Colors.DE_EMPHASIZE));
+					line().add(text("File deleted").color(Colors.WARNING));
 				} else if(line.startsWith("index ")) {
-					line().add(code(line).rgb(127, 127, 127));
+					line().add(code(line).color(Colors.DE_EMPHASIZE));
 				} else if(line.startsWith("Binary file ")) {
 					skipDiff = true;
 				} else if(line.startsWith("GIT binary patch")) {
-					line().add(text("(Binary file, content not rendered)").rgb(127, 127, 127));
+					line().add(text("(Binary file, content not rendered)").color(Colors.DE_EMPHASIZE));
 					skipDiff = true;
 				} else if(line.startsWith("+++")) {
 					// Don't care 
@@ -159,13 +159,13 @@ public class RowViewer
 					if(!matcher.matches()) throw new IllegalArgumentException("Malformed diff");
 					oldStart = Integer.parseInt(matcher.group(1));
 					newStart = Integer.parseInt(matcher.group(3));
-					line().add(code(line).rgb(127, 127, 127));
+					line().add(code(line).color(Colors.DE_EMPHASIZE));
 					colorizer.reset();
 				} else if(line.startsWith("-")) {
-					numbered(oldStart, -1, colorizer.colorizeLine(line).background(255, 238, 238));
+					numbered(oldStart, -1, colorizer.colorizeLine(line).background(Colors.REMOVED_BG));
 					++oldStart;
 				} else if(line.startsWith("+")) {
-					numbered(-1, newStart, colorizer.colorizeLine(line).background(221, 255, 221));
+					numbered(-1, newStart, colorizer.colorizeLine(line).background(Colors.ADDED_BG));
 					++newStart;
 				} else if(!skipDiff) {
 					numbered(oldStart, newStart, colorizer.colorizeLine(line));

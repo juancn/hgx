@@ -1,7 +1,5 @@
 package codng.hgx.ui;
 
-import codng.util.StopWatch;
-
 import javax.swing.Action;
 import javax.swing.JComponent;
 import javax.swing.KeyStroke;
@@ -38,7 +36,6 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static java.lang.Math.max;
@@ -261,9 +258,9 @@ public class RichTextView extends JComponent implements Scrollable {
 
 	protected Strip numbered(int oldStart, int newStart, Block block) {
 		return line()
-				.add(align(code(oldStart == -1? "" : oldStart).size(10), 30).right().background(250, 250, 250))
+				.add(align(code(oldStart == -1 ? "" : oldStart).size(10), 30).right().background(Colors.LINE_NO_BG))
 				.add(gap(2))
-				.add(align(code(newStart == -1 ? "" : newStart).size(10), 30).right().background(250, 250, 250))
+				.add(align(code(newStart == -1 ? "" : newStart).size(10), 30).right().background(Colors.LINE_NO_BG))
 				.add(block);
 	}
 
@@ -305,7 +302,7 @@ public class RichTextView extends JComponent implements Scrollable {
 
 	protected void header(String label, Text value) {
 		synchronized (build) {
-			build.add(strip().add(align(text(label).rgb(127, 127, 127).bold(), 100).right(), value));
+			build.add(strip().add(align(text(label).color(Colors.DE_EMPHASIZE).bold(), 100).right(), value));
 		}
 	}
 
@@ -351,15 +348,22 @@ public class RichTextView extends JComponent implements Scrollable {
 		protected boolean opaque;
 		private Color color = Color.BLACK;
 		private Color background = Color.WHITE;
-		
-		@SuppressWarnings("unchecked")
-		B rgb(int r, int g, int b) {
-			color = new Color(r, g, b);
-			return self();
+
+		B color(int r, int g, int b) {
+			return color(new Color(r, g, b));
 		}
 
 		B background(int r, int g, int b) {
-			background = new Color(r, g, b);
+			return background(new Color(r, g, b));
+		}
+
+		B color(final Color c) {
+			color = c;
+			return self();
+		}
+
+		B background(final Color c) {
+			background = c;
 			return self();
 		}
 
