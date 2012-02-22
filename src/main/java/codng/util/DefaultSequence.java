@@ -33,4 +33,9 @@ public abstract class DefaultSequence<T> implements Sequence<T> {
 	public Set<T> toSet() {
 		return Sequences.asSet(this);
 	}
+
+	@Override
+	public boolean isEmpty() {
+		return Sequences.isEmpty(this);
+	}
 }

@@ -50,4 +50,10 @@ public interface Sequence<T>
 	 */
 	Set<T> toSet();
 
+	/**
+	 * Returns true if this sequence is empty.
+	 * @return true if this sequence is empty.
+	 */
+	boolean isEmpty();
+
 }

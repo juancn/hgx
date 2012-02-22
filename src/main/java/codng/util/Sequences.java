@@ -141,4 +141,13 @@ public class Sequences {
 		for (T t : ts) list.add(t);
 		return list;
 	}
+
+	/**
+	 * Returns true if the specified iterable is empty.
+	 * @param ts an iterable
+	 * @return true if empty.
+	 */
+	public static boolean isEmpty(final Iterable<?> ts) {
+		return ts.iterator().hasNext();
+	}
 }

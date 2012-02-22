@@ -3,7 +3,6 @@ package codng.hgx;
 import codng.util.DefaultFunction;
 import codng.util.DefaultPredicate;
 import codng.util.Sequence;
-import codng.util.Sequences;
 import codng.util.StopWatch;
 
 import java.io.BufferedReader;
@@ -25,6 +24,8 @@ import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static codng.util.Sequences.asSequence;
+
 public class ChangeSet 
 		implements Serializable 
 {
@@ -33,24 +34,24 @@ public class ChangeSet
 	public final String user;
 	public final Date date;
 	public final String summary;
-	public final List<Id> parents = new ArrayList<>();
-	public final List<String> tags = new ArrayList<>();
+	private final List<Id> parents = new ArrayList<>();
+	private final List<String> tags = new ArrayList<>();
 
-	ChangeSet(Id id, String branch, String user, Date date, String summary) {
+	private ChangeSet(final Id id, final String branch, final String user, final Date date, final String summary) {
 		this.id = id;
 		this.branch = branch;
 		this.user = user;
 		this.date = date;
 		this.summary = summary;
 	}
-	
-	ChangeSet(final ChangeSet other) {
+
+	private ChangeSet(final ChangeSet other) {
 		this(other.id, other.branch, other.user, other.date, other.summary);
 		parents.addAll(other.parents);
 		tags.addAll(other.tags);
 	}
 
-	public static List<ChangeSet> loadFromCurrentDirectory() throws Exception {
+	public static Sequence<ChangeSet> loadFromCurrentDirectory() throws Exception {
 		final String id = Cache.repositoryId();
 
 		final StopWatch total = new StopWatch(), partial = new StopWatch();
@@ -112,7 +113,7 @@ public class ChangeSet
 		
 		System.out.printf("\tHistory update and parent linking: %dms\n", partial.elapsed());
 		System.out.printf("Done! Took %dms\n", total.elapsed());
-		return changeSets;
+		return asSequence(changeSets);
 	}
 
 	private static void verifyIntegrity(List<ChangeSet> changeSets) {
@@ -124,7 +125,7 @@ public class ChangeSet
 		}
 	}
 
-	public static List<ChangeSet> filterBranch(final String branch, List<ChangeSet> changeSets, boolean branchOnly) {
+	public static List<ChangeSet> filterBranch(final String branch, final Iterable<ChangeSet> changeSets, boolean branchOnly) {
 		final List<ChangeSet> result = new ArrayList<>();
 		final Set<Id> unresolvedParents = new HashSet<>();
 		final Set<Id> inBranch = new HashSet<>();
@@ -255,7 +256,7 @@ public class ChangeSet
 	}
 	
 	private static Sequence<String> filter(final List<Entry> entries, final String key) {
-		return Sequences.asSequence(entries).filter(new DefaultPredicate<Entry>(){
+		return asSequence(entries).filter(new DefaultPredicate<Entry>(){
 			@Override
 			public boolean apply(Entry entry) {
 				return entry.key.equals(key);
@@ -276,7 +277,15 @@ public class ChangeSet
 		}
 		return alternative;
 	}
-	
+
+	public Sequence<Id> parents() {
+		return asSequence(parents);
+	}
+
+	public Sequence<String> tags() {
+		return asSequence(tags);
+	}
+
 	static class Entry {
 		public final String key;
 		public final String value;

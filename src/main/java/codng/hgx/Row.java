@@ -1,7 +1,6 @@
 package codng.hgx;
 
 import codng.util.DefaultFunction;
-import codng.util.Function;
 import codng.util.Sequence;
 
 import java.util.ArrayList;
@@ -45,7 +44,7 @@ public class Row {
 		for (Cell cell : cells) {
 			if(cell.id.equals(this.changeSet.id)) {
 				cell.branch = changeSet.branch;
-				for (Id parent : this.changeSet.parents) {
+				for (Id parent : this.changeSet.parents()) {
 					branch = updateBranch(changeSet, result, branch, cell, parent);
 				}
 			} else {
