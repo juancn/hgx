@@ -43,6 +43,12 @@ public class ChangeSet
 		this.date = date;
 		this.summary = summary;
 	}
+	
+	ChangeSet(final ChangeSet other) {
+		this(other.id, other.branch, other.user, other.date, other.summary);
+		parents.addAll(other.parents);
+		tags.addAll(other.tags);
+	}
 
 	public static List<ChangeSet> loadFromCurrentDirectory() throws Exception {
 		final String id = Cache.repositoryId();
@@ -84,7 +90,7 @@ public class ChangeSet
 				changeSets.addAll(updated);
 				from = 0;
 			} else {
-				from = changeSets.size() < 2 ? 0 : changeSets.size()-2;
+				from = changeSets.size()-1;
 				changeSets.addAll(updated.subList(1, updated.size()));
 			}
 			linkParents(from, changeSets);
@@ -160,19 +166,21 @@ public class ChangeSet
 		return changeSet.branch.matches(branch);
 	}
 
-	private static List<ChangeSet> filterBranchOnly(String branch, Set<Id> inBranch, List<ChangeSet> result) {
-		if(result.isEmpty()) return result;
-		int i = 0;
-		for (; i < result.size()-1; i++) {
-			ChangeSet current = result.get(i);
-			ChangeSet next = result.get(i+1);
+	private static List<ChangeSet> filterBranchOnly(final String branch, final Set<Id> inBranch, final List<ChangeSet> changeSets) {
+		if(changeSets.isEmpty()) return changeSets;
+		final List<ChangeSet> result = new ArrayList<>();
+		for (int i = 0; i < changeSets.size()-1; i++) {
+			final ChangeSet current = changeSets.get(i);
+			final ChangeSet next = changeSets.get(i+1);
 			if(!matchBranch(branch, next)) {
 				break;
 			}
-			current.parents.retainAll(inBranch);			
+			final ChangeSet copy = new ChangeSet(current);
+			copy.parents.retainAll(inBranch);
+			result.add(copy);
 		}
 
-		return result.subList(0, i+1);
+		return result;
 	}
 
 	private static <X> X last(List<X> list) {
@@ -289,5 +297,5 @@ public class ChangeSet
 
 	/** Thu Jan 12 09:54:28 2012 -0800 */
 	private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("EEE MMM d HH:mm:ss yyyy Z", Locale.ENGLISH);
-	private static final long serialVersionUID = 1;
+	private static final long serialVersionUID = 2;
 }
