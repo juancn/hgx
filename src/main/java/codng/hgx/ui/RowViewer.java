@@ -122,7 +122,8 @@ public class RowViewer
 			int lineCount = 0;
 			for(String line = br.readLine(); line != null && !interrupted(); line = br.readLine())  {
 				++lineCount;
-				if(lineCount > 0 && lineCount % 1000 == 0) {
+				// Pick a nice prime so numbers are not all round
+				if(lineCount > 0 && lineCount % 1009 == 0) {
 					status.apply(String.format("Loading... (syntax highlighting, %s lines processed)", lineCount));
 				}
 				if(line.startsWith("diff")) {

@@ -84,7 +84,7 @@ public class ChangeSet
 				changeSets.addAll(updated);
 				from = 0;
 			} else {
-				from = changeSets.size()-1;
+				from = changeSets.size() < 2 ? 0 : changeSets.size()-2;
 				changeSets.addAll(updated.subList(1, updated.size()));
 			}
 			linkParents(from, changeSets);
