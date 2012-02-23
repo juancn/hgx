@@ -9,6 +9,8 @@ import java.util.Set;
  * @param <T> element type
  */
 public abstract class DefaultSequence<T> implements Sequence<T> {
+	protected static final int TO_STRING_LIMIT = 1000;
+
 	@Override
 	public <Y> Sequence<Y> map(final Function<T, Y> mapper) {
 		return Sequences.map(this, mapper);
@@ -37,5 +39,20 @@ public abstract class DefaultSequence<T> implements Sequence<T> {
 	@Override
 	public boolean isEmpty() {
 		return Sequences.isEmpty(this);
+	}
+
+	@Override
+	public String toString() {
+		final StringBuilder sb = new StringBuilder();
+		sb.append('[');
+		int count = 0;
+		for (T t : this) {
+			if(count != 0) sb.append(", ");
+			if(count > TO_STRING_LIMIT) { sb.append("..."); break; }
+			sb.append(t);
+			++count;
+		}
+		sb.append(']');
+		return sb.toString();
 	}
 }
