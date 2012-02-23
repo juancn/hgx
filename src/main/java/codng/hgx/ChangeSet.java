@@ -2,7 +2,6 @@ package codng.hgx;
 
 import codng.util.DefaultFunction;
 import codng.util.DefaultPredicate;
-import codng.util.Function;
 import codng.util.Sequence;
 import codng.util.StopWatch;
 
@@ -23,7 +22,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 import java.util.concurrent.Callable;
-import java.util.concurrent.atomic.AtomicReference;
 
 import static codng.util.Sequences.asSequence;
 import static codng.util.Sequences.reverse;
@@ -98,12 +96,11 @@ public class ChangeSet
 			}
 			linkParents(from, changeSets);
 
-			// Save updated cache in background
-			final AtomicReference<List<ChangeSet>> cache = new AtomicReference<>(changeSets);
+			// I'm exploiting the fact that changeSets and id are now a final field of the inner class, linkParents happens-before new Thread()
+			// and that the Thread object is completely initialized before start is called (hence changeSets and id are properly read).
 			new Thread("Cache updater") {
 				@Override
 				public void run() {
-					final List<ChangeSet> changeSets = cache.get();
 					Cache.saveHistory(id, changeSets);
 					Cache.saveLastRevision(id, last(changeSets).id.seqNo);
 					System.out.println("Cache updated.");
