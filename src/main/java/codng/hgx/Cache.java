@@ -77,7 +77,9 @@ public class Cache {
 				return Cast.force(readObject(file));
 			} catch (IOException|ClassNotFoundException e) {
 				file.delete();
+				saveLastRevision(id, 0);
 				e.printStackTrace();
+				System.exit(-1);
 			}
 		} 
 		return new ArrayList<>();

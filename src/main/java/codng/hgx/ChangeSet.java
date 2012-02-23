@@ -105,7 +105,7 @@ public class ChangeSet
 				public void run() {
 					final List<ChangeSet> changeSets = cache.get();
 					Cache.saveHistory(id, changeSets);
-					Cache.saveLastRevision(id, (int) last(changeSets).id.seqNo);
+					Cache.saveLastRevision(id, last(changeSets).id.seqNo);
 					System.out.println("Cache updated.");
 				}
 			}.start();
@@ -118,8 +118,9 @@ public class ChangeSet
 	}
 
 	private static void verifyIntegrity(List<ChangeSet> changeSets) {
-		for (int i = 0; i < changeSets.size(); i++) {
-			ChangeSet c = changeSets.get(i);
+		final int size = changeSets.size();
+		for (int i = 0; i < size; i++) {
+			final ChangeSet c = changeSets.get(i);
 			if(c.id.seqNo != i) {
 				throw new IllegalStateException("Non sequential history? " + i + " -> " + c.id);
 			}
@@ -145,7 +146,7 @@ public class ChangeSet
 						if(o1.equals(o2)) return 0;
 						if(inBranch.contains(o1)) return -1;
 						if(inBranch.contains(o2)) return 1;
-						return (int) (o1.seqNo - o2.seqNo);
+						return o1.seqNo - o2.seqNo;
 					}
 				});
 			}
@@ -308,5 +309,5 @@ public class ChangeSet
 
 	/** Thu Jan 12 09:54:28 2012 -0800 */
 	private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("EEE MMM d HH:mm:ss yyyy Z", Locale.ENGLISH);
-	private static final long serialVersionUID = 2;
+	private static final long serialVersionUID = 4;
 }

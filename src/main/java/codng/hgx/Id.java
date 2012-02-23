@@ -5,17 +5,17 @@ import java.io.Serializable;
 public class Id 
 		implements Serializable 
 {
-	public final long seqNo; 
+	public final int seqNo; 
 	public final String hash;
 
-	Id(long seqNo, String hash) {
+	Id(int seqNo, String hash) {
 		this.seqNo = seqNo;
 		this.hash = hash;
 	}
 
 	@Override
 	public int hashCode() {
-		return (int)seqNo + 37*hash.hashCode();
+		return seqNo + 37*hash.hashCode();
 	}
 
 	@Override
@@ -37,6 +37,6 @@ public class Id
 		if(parts.length != 2) {
 			throw new IllegalArgumentException("Cannot parse: " + s);
 		}
-		return new Id(Long.parseLong(parts[0]), parts[1]);
+		return new Id(Integer.parseInt(parts[0]), parts[1]);
 	}
 }
