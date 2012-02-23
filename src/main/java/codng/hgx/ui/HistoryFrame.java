@@ -150,7 +150,6 @@ public class HistoryFrame
 		private List<String> arguments = new ArrayList<>();
 		private String branch;
 		private boolean branchOnly;
-		private boolean debug;
 
 		CommandLine(String[] args) {
 			this.args = args;
@@ -169,10 +168,6 @@ public class HistoryFrame
 			return branch;
 		}
 
-		public boolean isDebug() {
-			return debug;
-		}
-		
 		private String la() {
 			return next < args.length ? args[next] : null;
 		}
@@ -204,10 +199,6 @@ public class HistoryFrame
 					consume();
 					branchOnly = true;
 					break;
-				case "-D": case "--debug":
-					consume();
-					debug = true;
-					break;
 				case "-t": case "--trunk":
 					consume();
 					branchOnly = true;
@@ -226,8 +217,6 @@ public class HistoryFrame
 	}
 
 	public static void main(String[] args) throws Exception {
-		final String branch;
-		final List<ChangeSet> changeSets;
 		final CommandLine cmdLine = new CommandLine(args).parse();
 		
 		if(!cmdLine.getArguments().isEmpty()) {
@@ -235,14 +224,8 @@ public class HistoryFrame
 			System.exit(1);
 		}
 
-		if (cmdLine.isDebug()) {
-			branch = "Debug";
-			changeSets = ChangeSet.filterBranch("case16146",ChangeSet.loadFrom(new FileInputStream("/Users/juancn/Downloads/hg_log.txt")), false);
-		} else {
-			branch = cmdLine.getBranch() == null ? Hg.branch() : cmdLine.getBranch();
-			changeSets = ChangeSet.filterBranch(branch, ChangeSet.loadFromCurrentDirectory(), cmdLine.isBranchOnly());
-		}
-
+		final String branch = cmdLine.getBranch() == null ? Hg.branch() : cmdLine.getBranch();
+		final List<ChangeSet> changeSets = ChangeSet.filterBranch(branch, ChangeSet.loadFromCurrentDirectory(), cmdLine.isBranchOnly());
 		final HistoryFrame historyFrame = new HistoryFrame(branch, Row.fromChangeSets(changeSets).iterator());
 		historyFrame.doShow();
 	}
@@ -259,5 +242,4 @@ public class HistoryFrame
 	}
 
 	private static final Preferences PREFERENCES = Preferences.userNodeForPackage(HistoryFrame.class);
-
 }
