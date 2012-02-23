@@ -15,6 +15,7 @@ public class UtilTest {
 		final Sequence<Integer> integers = asSequence(1, 2, 3, 4, 5);
 		assertEquals("[1, 2, 3, 4, 5]", integers.toList().toString());
 		assertEquals("[1, 2, 3, 4, 5]", integers.toString());
+		assertEquals("[1, 2, 3]", integers.limit(3).toString());
 		assertEquals("[2, 4]", integers.filter(EVEN).toList().toString());
 		assertEquals("[1, 3, 5]", integers.filter(EVEN.not()).toList().toString());
 

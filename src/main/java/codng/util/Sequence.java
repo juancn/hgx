@@ -56,4 +56,11 @@ public interface Sequence<T>
 	 */
 	boolean isEmpty();
 
+	/**
+	 * Returns a sequence with at most <code>limit</code> elements.
+	 * @param limit maximum number of elements in the resulting sequence
+	 * @return a limited sequence.
+	 */
+	Sequence<T> limit(int limit);
+
 }

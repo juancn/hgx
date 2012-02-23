@@ -150,4 +150,57 @@ public class Sequences {
 	public static boolean isEmpty(final Iterable<?> ts) {
 		return ts.iterator().hasNext();
 	}
+
+	/**
+	 * Returns a string representation of and iterable object.
+	 * The resulting string begins with the string start and is finished by the string end.
+	 * Inside, the string representations of elements (w.r.t. the method toString()) are separated by the string separator.
+	 * @param ts iterable
+	 * @param start starting string
+	 * @param separator separator string
+	 * @param end ending string
+	 * @param <T> element type
+	 * @return a string representation of the specified iterable
+	 */
+	public static <T> String toString(final Iterable<T> ts, final String start, final String separator, final String end) {
+		final StringBuilder sb = new StringBuilder();
+		if(start != null) sb.append(start);
+		int count = 0;
+		for (final T t : ts) {
+			if(separator != null && count != 0) sb.append(separator);
+			sb.append(t);
+			++count;
+		}
+		if(end != null) sb.append(end);
+		return sb.toString();
+	}
+
+	/**
+	 * Returns a sequence with up to the specified number of elements.
+	 * @param iterable an iterable
+	 * @param limit maximum number of elements in the returned sequence
+	 * @param <T> element type of the iterable
+	 * @return the limited sequence.
+	 */
+	public static <T> Sequence<T> limit(final Iterable<T> iterable, final int limit) {
+		return new DefaultSequence<T>() {
+			@Override
+			public Iterator<T> iterator() {
+				return new NoRemoveIterator<T>() {
+					private Iterator<T> it = iterable.iterator();
+					private int count;
+					@Override
+					protected T advance() {
+						if (count < limit && it.hasNext()) {
+							++count;
+							return it.next();
+						} else {
+							return finished();
+						}
+					}
+				};
+			}
+		};
+	}
+
 }

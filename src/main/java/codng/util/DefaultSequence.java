@@ -42,17 +42,12 @@ public abstract class DefaultSequence<T> implements Sequence<T> {
 	}
 
 	@Override
+	public Sequence<T> limit(final int limit) {
+		return Sequences.limit(this, limit);
+	}
+
+	@Override
 	public String toString() {
-		final StringBuilder sb = new StringBuilder();
-		sb.append('[');
-		int count = 0;
-		for (T t : this) {
-			if(count != 0) sb.append(", ");
-			if(count > TO_STRING_LIMIT) { sb.append("..."); break; }
-			sb.append(t);
-			++count;
-		}
-		sb.append(']');
-		return sb.toString();
+		return Sequences.toString(this, "[", ", ", "]");
 	}
 }
