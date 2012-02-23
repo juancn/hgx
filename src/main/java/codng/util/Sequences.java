@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Set;
 
 /**
@@ -35,6 +36,10 @@ public class Sequences {
 	 * @return a sequence backed by the specified iterable
 	 */
 	public static <X> Sequence<X> asSequence(final Iterable<X> iterable) {
+		// Fast path
+		if (iterable instanceof Sequence) {
+			return Cast.force(iterable);
+		}
 		return new DefaultSequence<X>() {
 			@Override
 			public Iterator<X> iterator() {
@@ -148,7 +153,7 @@ public class Sequences {
 	 * @return true if empty.
 	 */
 	public static boolean isEmpty(final Iterable<?> ts) {
-		return ts.iterator().hasNext();
+		return !ts.iterator().hasNext();
 	}
 
 	/**
@@ -197,6 +202,29 @@ public class Sequences {
 						} else {
 							return finished();
 						}
+					}
+				};
+			}
+		};
+	}
+
+	/**
+	 * Returns a sequence that goes through the specified list in reverse
+	 * @param list a list
+	 * @param <T> element type
+	 * @return a reverse sequence
+	 */
+	public static <T> Sequence<T> reverse(final List<T> list) {
+		return new DefaultSequence<T>() {
+			@Override
+			public Iterator<T> iterator() {
+				return new NoRemoveIterator<T>() {
+
+					private final ListIterator<T> listIterator = list.listIterator(list.size());
+
+					@Override
+					protected T advance() {
+						return listIterator.hasPrevious() ? listIterator.previous() : finished();
 					}
 				};
 			}

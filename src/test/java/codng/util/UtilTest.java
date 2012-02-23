@@ -2,9 +2,11 @@ package codng.util;
 
 import org.junit.Test;
 
+import java.util.Arrays;
 import java.util.Iterator;
 
 import static codng.util.Sequences.asSequence;
+import static codng.util.Sequences.reverse;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -27,6 +29,7 @@ public class UtilTest {
 		assertEquals("[0, 0, 0, 2, 0, 2, 0, 2, 4]", integers.flatMap(TO_LIST).filter(EVEN).toList().toString());
 		assertEquals("[1, 1, 1, 3, 1, 3]", integers.flatMap(TO_LIST).filter(EVEN.not()).toList().toString());
 		assertTrue(integers.toSet().containsAll(integers.toList()));
+		assertEquals("[5, 4, 3, 2, 1]", reverse(Arrays.asList(1,2,3,4,5)).toString());
 	}
 
 	@Test
@@ -37,8 +40,8 @@ public class UtilTest {
 
 	@Test
 	public void predicate() {
-		final Predicate<Object> t = Predicates.TRUE();
-		final Predicate<Object> f = Predicates.FALSE();
+		final Predicate<Object> t = Predicates.alwaysTrue();
+		final Predicate<Object> f = Predicates.alwaysFalse();
 
 		assertTrue(t.apply(null));
 		assertFalse(f.apply(null));
@@ -55,6 +58,9 @@ public class UtilTest {
 
 		assertTrue(f.not().apply(null));
 		assertFalse(t.not().apply(null));
+
+		assertFalse(Predicates.notNull().apply(null));
+		assertTrue(Predicates.notNull().apply(""));
 	}
 
 	@Test

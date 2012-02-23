@@ -2,6 +2,7 @@ package codng.hgx;
 
 import codng.util.DefaultFunction;
 import codng.util.DefaultPredicate;
+import codng.util.Function;
 import codng.util.Sequence;
 import codng.util.StopWatch;
 
@@ -25,6 +26,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static codng.util.Sequences.asSequence;
+import static codng.util.Sequences.reverse;
 
 public class ChangeSet 
 		implements Serializable 
@@ -97,11 +99,11 @@ public class ChangeSet
 			linkParents(from, changeSets);
 
 			// Save updated cache in background
-			final AtomicReference<ArrayList<ChangeSet>> cache = new AtomicReference<>(new ArrayList<>(changeSets));
+			final AtomicReference<List<ChangeSet>> cache = new AtomicReference<>(changeSets);
 			new Thread("Cache updater") {
 				@Override
 				public void run() {
-					final ArrayList<ChangeSet> changeSets = cache.get();
+					final List<ChangeSet> changeSets = cache.get();
 					Cache.saveHistory(id, changeSets);
 					Cache.saveLastRevision(id, (int) last(changeSets).id.seqNo);
 					System.out.println("Cache updated.");
@@ -109,11 +111,10 @@ public class ChangeSet
 			}.start();
 		}
 		verifyIntegrity(changeSets);
-		Collections.reverse(changeSets);
-		
+
 		System.out.printf("\tHistory update and parent linking: %dms\n", partial.elapsed());
 		System.out.printf("Done! Took %dms\n", total.elapsed());
-		return asSequence(changeSets);
+		return reverse(changeSets);
 	}
 
 	private static void verifyIntegrity(List<ChangeSet> changeSets) {
@@ -132,11 +133,13 @@ public class ChangeSet
 		for (ChangeSet changeSet : changeSets) {
 			if(matchBranch(branch, changeSet)) inBranch.add(changeSet.id);
 			if(matchBranch(branch, changeSet) || unresolvedParents.contains(changeSet.id)) {
-				result.add(changeSet);
-				unresolvedParents.addAll(changeSet.parents);
-				unresolvedParents.remove(changeSet.id);
+				// Create a copy. The history save thread might not be done yet.
+				final ChangeSet copy = new ChangeSet(changeSet);
+				result.add(copy);
+				unresolvedParents.addAll(copy.parents);
+				unresolvedParents.remove(copy.id);
 				// Attempt to keep current branch to the left
-				Collections.sort(changeSet.parents, new Comparator<Id>() {
+				Collections.sort(copy.parents, new Comparator<Id>() {
 					@Override
 					public int compare(Id o1, Id o2) {
 						if(o1.equals(o2)) return 0;
@@ -147,7 +150,7 @@ public class ChangeSet
 				});
 			}
 		}
-		
+
 		// Group all changes belonging to the branch at the top
 		Collections.sort(result, new Comparator<ChangeSet>() {
 			@Override
@@ -176,9 +179,8 @@ public class ChangeSet
 			if(!matchBranch(branch, next)) {
 				break;
 			}
-			final ChangeSet copy = new ChangeSet(current);
-			copy.parents.retainAll(inBranch);
-			result.add(copy);
+			current.parents.retainAll(inBranch);
+			result.add(current);
 		}
 
 		return result;

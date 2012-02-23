@@ -18,12 +18,21 @@ public class Predicates {
 		};
 	}
 
-	public static <X> Predicate<X> TRUE() {
+	public static <X> Predicate<X> alwaysTrue() {
 		return Cast.force(TRUE_CONST);
 	}
 
-	public static <X> Predicate<X> FALSE() {
+	public static <X> Predicate<X> alwaysFalse() {
 		return Cast.force(FALSE_CONST);
+	}
+
+	public static <X> Predicate<X> notNull() {
+		return new DefaultPredicate<X>() {
+			@Override
+			public boolean apply(X x) {
+				return x != null;
+			}
+		};
 	}
 
 	public static <X> Predicate<X> and(final Predicate<X> a, final Predicate<X> b) {
