@@ -47,17 +47,15 @@ public class RowViewer
 	private void recalculate() {
 		clear();
 		if(row != null) {
-			addHeader(row.changeSet);
-			final Text loading = text("Loading...").color(Colors.LOADING).bold().size(14);
-			line().add(loading);
-			finishBuild();
+			final Text loading = loading();
 			lastUpdate = scheduler.schedule(new Runnable() {
 				final Row row = getRow();
 				@Override
 				public void run() {
 					Thread.currentThread().setPriority(Thread.MIN_PRIORITY);
-					addHeader(this.row.changeSet);
-					addDiff(this.row, new DefaultPredicate<String>() {
+					final RowModel rowModel = new RowModel();
+					rowModel.addHeader(this.row.changeSet);
+					rowModel.addDiff(this.row, new DefaultPredicate<String>() {
 						@Override
 						public boolean apply(final String status) {
 							SwingUtilities.invokeLater(new Runnable() {
@@ -75,9 +73,7 @@ public class RowViewer
 						SwingUtilities.invokeAndWait(new Runnable() {
 							@Override
 							public void run() {
-								finishBuild();
-								revalidate();
-								repaint();
+								setModel(rowModel);
 							}
 						});
 					} catch (InterruptedException | InvocationTargetException e) {
@@ -90,95 +86,106 @@ public class RowViewer
 		}
 	}
 
+	private Text loading() {
+		final RowModel rowModel = new RowModel();
+		rowModel.addHeader(row.changeSet);
+		final Text loading = rowModel.text("Loading...").color(Colors.LOADING).bold().size(14);
+		rowModel.line().add(loading);
+		setModel(rowModel);
+		return loading;
+	}
+
 	private boolean interrupted() {
 		return Thread.currentThread().isInterrupted();
 	}
 
-	private void addHeader(final ChangeSet changeSet) {
-		header("SHA:", changeSet.id);
-		header("Author:", changeSet.user);
-		header("Date:", changeSet.date);
-		header("Summary:", text(changeSet.summary).bold());
-		header("Parents:", changeSet.parents());
-		header("Branch:", text(changeSet.branch).bold());
-		if (!changeSet.tags().isEmpty()) header("Tags:", text(changeSet.tags()).bold());
-		hr();
-	}
-
-	private void addDiff(final Row row, final Predicate<String> status) {
-		try {
-			colorize(Cache.loadDiff(row), status);
-		} catch (IOException | InterruptedException | RuntimeException e) {
-			e.printStackTrace();
+	private class RowModel extends Model {
+		void addHeader(final ChangeSet changeSet) {
+			header("SHA:", changeSet.id);
+			header("Author:", changeSet.user);
+			header("Date:", changeSet.date);
+			header("Summary:", text(changeSet.summary).bold());
+			header("Parents:", changeSet.parents());
+			header("Branch:", text(changeSet.branch).bold());
+			if (!changeSet.tags().isEmpty()) header("Tags:", text(changeSet.tags()).bold());
+			hr();
 		}
-	}
 
-	private void colorize(BufferedReader br, final Predicate<String> status) {
-		try {
-			int oldStart = -1, newStart = -1;
-			
-			boolean skipDiff = false;
-			Colorizer colorizer = Colorizer.plain(this);
-			int lineCount = 0;
-			for(String line = br.readLine(); line != null && !interrupted(); line = br.readLine())  {
-				++lineCount;
-				// Pick a nice prime so numbers are not all round
-				if(lineCount > 0 && lineCount % 1009 == 0) {
-					status.apply(String.format("Loading... (syntax highlighting, %s lines processed)", lineCount));
-				}
-				if(line.startsWith("diff")) {
-					skipDiff = false;
-					final Matcher matcher = DIFF_PATTERN.matcher(line);
-					if(!matcher.matches()) throw new IllegalArgumentException("Malformed diff");
-					final String file = matcher.group(2);
-					line().add(align(text(file).vgap(10).bold(), getParent().getWidth() - 50).background(Colors.FILE_BG));
-				
-					if(file.endsWith(".java")) {
-						colorizer = new JavaColorizer(this);
-					} else {
-						colorizer = Colorizer.plain(this);
+		private void colorize(BufferedReader br, final Predicate<String> status) {
+			try {
+				int oldStart = -1, newStart = -1;
+
+				boolean skipDiff = false;
+				Colorizer colorizer = Colorizer.plain(this);
+				int lineCount = 0;
+				for(String line = br.readLine(); line != null && !interrupted(); line = br.readLine())  {
+					++lineCount;
+					// Pick a nice prime so numbers are not all round
+					if(lineCount > 0 && lineCount % 1009 == 0) {
+						status.apply(String.format("Loading... (syntax highlighting, %s lines processed)", lineCount));
 					}
-				} else if(line.startsWith("new file mode")) { // I should check that we're still in the header
-					line().add(code(line).color(Colors.DE_EMPHASIZE));
-				} else if(line.startsWith("deleted file mode")) {
-					line().add(code(line).color(Colors.DE_EMPHASIZE));
-					line().add(text("File deleted").color(Colors.WARNING));
-				} else if(line.startsWith("index ")) {
-					line().add(code(line).color(Colors.DE_EMPHASIZE));
-				} else if(line.startsWith("Binary file ")) {
-					skipDiff = true;
-				} else if(line.startsWith("GIT binary patch")) {
-					line().add(text("(Binary file, content not rendered)").color(Colors.DE_EMPHASIZE));
-					skipDiff = true;
-				} else if(line.startsWith("+++")) {
-					// Don't care 
-				} else if(line.startsWith("---")) {
-					// Don't care 
-				} else if(line.startsWith("@@")) {
-					final Matcher matcher = HUNK_PATTERN.matcher(line);
-					if(!matcher.matches()) throw new IllegalArgumentException("Malformed diff");
-					oldStart = Integer.parseInt(matcher.group(1));
-					newStart = Integer.parseInt(matcher.group(3));
-					line().add(code(line).color(Colors.DE_EMPHASIZE));
-					colorizer.reset();
-				} else if(line.startsWith("-")) {
-					numbered(oldStart, -1, colorizer.colorizeLine(line).background(Colors.REMOVED_BG));
-					++oldStart;
-				} else if(line.startsWith("+")) {
-					numbered(-1, newStart, colorizer.colorizeLine(line).background(Colors.LINE_ADDED_BG));
-					++newStart;
-				} else if(!skipDiff) {
-					numbered(oldStart, newStart, colorizer.colorizeLine(line));
-					++oldStart; ++newStart;
+					if(line.startsWith("diff")) {
+						skipDiff = false;
+						final Matcher matcher = DIFF_PATTERN.matcher(line);
+						if(!matcher.matches()) throw new IllegalArgumentException("Malformed diff");
+						final String file = matcher.group(2);
+						line().add(align(text(file).vgap(10).bold(), getParent().getWidth() - 50).background(Colors.FILE_BG));
+
+						if(file.endsWith(".java")) {
+							colorizer = new JavaColorizer(this);
+						} else {
+							colorizer = Colorizer.plain(this);
+						}
+					} else if(line.startsWith("new file mode")) { // I should check that we're still in the header
+						line().add(code(line).color(Colors.DE_EMPHASIZE));
+					} else if(line.startsWith("deleted file mode")) {
+						line().add(code(line).color(Colors.DE_EMPHASIZE));
+						line().add(text("File deleted").color(Colors.WARNING));
+					} else if(line.startsWith("index ")) {
+						line().add(code(line).color(Colors.DE_EMPHASIZE));
+					} else if(line.startsWith("Binary file ")) {
+						skipDiff = true;
+					} else if(line.startsWith("GIT binary patch")) {
+						line().add(text("(Binary file, content not rendered)").color(Colors.DE_EMPHASIZE));
+						skipDiff = true;
+					} else if(line.startsWith("+++")) {
+						// Don't care
+					} else if(line.startsWith("---")) {
+						// Don't care
+					} else if(line.startsWith("@@")) {
+						final Matcher matcher = HUNK_PATTERN.matcher(line);
+						if(!matcher.matches()) throw new IllegalArgumentException("Malformed diff");
+						oldStart = Integer.parseInt(matcher.group(1));
+						newStart = Integer.parseInt(matcher.group(3));
+						line().add(code(line).color(Colors.DE_EMPHASIZE));
+						colorizer.reset();
+					} else if(line.startsWith("-")) {
+						numbered(oldStart, -1, colorizer.colorizeLine(line).background(Colors.REMOVED_BG));
+						++oldStart;
+					} else if(line.startsWith("+")) {
+						numbered(-1, newStart, colorizer.colorizeLine(line).background(Colors.LINE_ADDED_BG));
+						++newStart;
+					} else if(!skipDiff) {
+						numbered(oldStart, newStart, colorizer.colorizeLine(line));
+						++oldStart; ++newStart;
+					}
+				}
+			} catch (IOException e) {
+				throw new Error("This shouldn't happen!");
+			} finally {
+				try {
+					br.close();
+				} catch (IOException e) {
+					// Ignore
 				}
 			}
-		} catch (IOException e) {
-			throw new Error("This shouldn't happen!");
-		} finally {
+		}
+
+		void addDiff(final Row row, final Predicate<String> status) {
 			try {
-				br.close();
-			} catch (IOException e) {
-				// Ignore
+				colorize(Cache.loadDiff(row), status);
+			} catch (IOException | InterruptedException | RuntimeException e) {
+				e.printStackTrace();
 			}
 		}
 	}

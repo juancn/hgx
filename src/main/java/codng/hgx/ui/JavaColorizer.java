@@ -1,12 +1,14 @@
 package codng.hgx.ui;
 
+import codng.hgx.ui.RichTextView.Model;
+
 import java.text.ParseException;
 
 class JavaColorizer extends Colorizer {
 
 	private boolean unterminatedComment;
-	JavaColorizer(RowViewer rowViewer) {
-		super(rowViewer);
+	JavaColorizer(final Model model) {
+		super(model);
 	}
 
 	@Override
@@ -75,10 +77,10 @@ class JavaColorizer extends Colorizer {
 	}
 
 	private RowViewer.Text text(CharSequence text) {
-		return rowViewer.code(text.toString()).hgap(0);
+		return model.code(text.toString()).hgap(0);
 	}
 
 	private RowViewer.Strip strip() {
-		return rowViewer.strip();
+		return model.strip();
 	}
 }

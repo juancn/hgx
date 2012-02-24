@@ -4,7 +4,6 @@ import javax.swing.Action;
 import javax.swing.JComponent;
 import javax.swing.KeyStroke;
 import javax.swing.Scrollable;
-import javax.swing.SwingUtilities;
 import javax.swing.TransferHandler;
 import javax.swing.UIManager;
 import javax.swing.text.TextAction;
@@ -41,8 +40,7 @@ import java.util.regex.Pattern;
 import static java.lang.Math.max;
 
 public class RichTextView extends JComponent implements Scrollable {
-	private final List<Strip> lines = new ArrayList<>();
-	protected final List<Strip> build = new ArrayList<>();
+	private Model model = new Model();
 	protected Block startBlock;
 	protected Point selectionStart;
 	protected Block endBlock;
@@ -126,8 +124,8 @@ public class RichTextView extends JComponent implements Scrollable {
 		final Object selectAll = addAction(new TextAction("selectAll") {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				if (!lines.isEmpty()) {
-					final Strip lastLine = lines.get(lines.size() - 1);
+				if (!model.lines.isEmpty()) {
+					final Strip lastLine = model.lines.get(model.lines.size() - 1);
 					selectionStart = new Point(0,0);
 					startBlock = blockAt(selectionStart.x, selectionStart.y);
 					selectionEnd = new Point((int) lastLine.width(), (int) (lastLine.position.y + lastLine.height()));
@@ -141,24 +139,85 @@ public class RichTextView extends JComponent implements Scrollable {
 	}
 	
 	public void clear() {
-		lines.clear();
+		model.clear();
 		startBlock = null;
 		endBlock = null;
 	}
-	
-	public void finishBuild() {
-		assert SwingUtilities.isEventDispatchThread();
-		synchronized (build) {
-			clear();
-			lines.addAll(build);
-			clearBuild();
+
+	public class Model {
+		protected final List<Strip> lines = new ArrayList<>();
+
+		public Model() { }
+
+		public void clear() {
+			lines.clear();
+		}
+
+		Strip line() {
+			final Strip line = strip().lpad(25);
+			lines.add(line);
+			return line;
+		}
+
+		protected void hr() {
+			lines.add(strip().add(new HRuler(getParent().getWidth())));
+		}
+
+		protected void header(String label, Text value) {
+			lines.add(strip().add(align(text(label).color(Colors.DE_EMPHASIZE).bold(), 100).right(), value));
+		}
+
+		protected void header(String label, Object value) {
+			header(label, text(value));
+		}
+
+		protected Strip numbered(int oldStart, int newStart, Block block) {
+			return line()
+					.add(align(code(oldStart == -1 ? "" : oldStart).size(10), 30).right().background(Colors.LINE_NO_BG))
+					.add(gap(2))
+					.add(align(code(newStart == -1 ? "" : newStart).size(10), 30).right().background(Colors.LINE_NO_BG))
+					.add(block);
+		}
+
+		private Block<Block> gap(final int gap) {
+			return new Block<Block>() {
+				@Override
+				float height() {
+					return 0;
+				}
+
+				@Override
+				float width() {
+					return gap;
+				}
+			};
+		}
+
+		Text code(Object line) {
+			return text(line).monospaced();
+		}
+
+		Strip strip() {
+			return new Strip();
+		}
+
+		protected HBox align(Block block, float width) {
+			return new HBox(block, width);
+		}
+
+		protected Text text(Object value) {
+			return new Text(String.valueOf(value));
 		}
 	}
+	
+	public void setModel(final Model model) {
+		this.model = model;
+		revalidate();
+		repaint();
+	}
 
-	public void clearBuild() {
-		synchronized (build) {
-			build.clear();
-		}
+	public Model getModel() {
+		return model;
 	}
 
 	private String addAction(Action action) {
@@ -183,7 +242,7 @@ public class RichTextView extends JComponent implements Scrollable {
 
 			StringBuilder sb = new StringBuilder();
 			for (int i = line0; i <= line1; i++) {
-				Strip strip = lines.get(i);
+				Strip strip = model.lines.get(i);
 				if( i != line0 ) sb.append('\n');
 				sb.append(strip);				
 			}
@@ -200,25 +259,25 @@ public class RichTextView extends JComponent implements Scrollable {
 
 	private void updateDimensions() {
 		float totalHeight = 0, maxWidth = 0;
-		for (Strip line : lines) {
+		for (Strip line : model.lines) {
 			final float lineHeight = line.height();
 			line.position(0, totalHeight);
 			totalHeight += lineHeight;
 			maxWidth = max(maxWidth, line.width());				
 		}
 		
-		if(!lines.isEmpty()) {
-			avgLineHeight = totalHeight / lines.size();
+		if(!model.lines.isEmpty()) {
+			avgLineHeight = totalHeight / model.lines.size();
 		}
 		setPreferredSize(new Dimension((int)maxWidth, (int)totalHeight));
 	}
 
 	protected Block blockAt(float x, float y) {
-		return lines.get(clamp(lineAt(y))).blockAt(x);
+		return model.lines.get(clamp(lineAt(y))).blockAt(x);
 	}
 
 	private int lineAt(float y) {
-		int index = Collections.binarySearch(lines, y, Y_COMPARATOR);
+		int index = Collections.binarySearch(model.lines, y, Y_COMPARATOR);
 
 		if(index < 0) {
 			index = -index -1;
@@ -256,68 +315,6 @@ public class RichTextView extends JComponent implements Scrollable {
 		return false;
 	}
 
-	protected Strip numbered(int oldStart, int newStart, Block block) {
-		return line()
-				.add(align(code(oldStart == -1 ? "" : oldStart).size(10), 30).right().background(Colors.LINE_NO_BG))
-				.add(gap(2))
-				.add(align(code(newStart == -1 ? "" : newStart).size(10), 30).right().background(Colors.LINE_NO_BG))
-				.add(block);
-	}
-
-	private Block<Block> gap(final int gap) {
-		return new Block<Block>() {
-			@Override
-			float height() {
-				return 0;
-			}
-
-			@Override
-			float width() {
-				return gap;
-			}
-		};
-	}
-
-	Text code(Object line) {
-		return text(line).monospaced();
-	}
-
-	Strip line() {
-		final Strip line = strip().lpad(25);
-		synchronized (build) {
-			build.add(line);
-		}
-		return line;
-	}
-
-	Strip strip() {
-		return new Strip();
-	}
-
-	protected void hr() {
-		synchronized (build) {
-			build.add(strip().add(new HRuler(getParent().getWidth())));
-		}
-	}
-
-	protected void header(String label, Text value) {
-		synchronized (build) {
-			build.add(strip().add(align(text(label).color(Colors.DE_EMPHASIZE).bold(), 100).right(), value));
-		}
-	}
-
-	protected void header(String label, Object value) {
-		header(label, text(value));
-	}
-
-	protected HBox align(Block block, float width) {
-		return new HBox(block, width);
-	}
-
-	protected Text text(Object value) {
-		return new Text(String.valueOf(value));
-	}
-
 	@Override
 	protected void paintComponent(Graphics g) {
 		// Alow my UI to paint itself
@@ -336,8 +333,8 @@ public class RichTextView extends JComponent implements Scrollable {
 		g.clearRect(clipBounds.x, clipBounds.y, clipBounds.width, clipBounds.height);
 
 		float y = y1;
-		for (int i = lineAt(y1); i < lines.size() && y <= y2; i++) {
-			final Strip line = lines.get(i);
+		for (int i = lineAt(y1); i < model.lines.size() && y <= y2; i++) {
+			final Strip line = model.lines.get(i);
 			line.draw(g);
 			y = line.position.y;
 		}

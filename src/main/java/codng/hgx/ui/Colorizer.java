@@ -1,31 +1,33 @@
 package codng.hgx.ui;
 
-abstract class Colorizer {
-	protected final RowViewer rowViewer;
+import codng.hgx.ui.RichTextView.Model;
 
-	protected Colorizer(RowViewer rowViewer) {
-		this.rowViewer = rowViewer;
+abstract class Colorizer {
+	protected final Model model;
+
+	protected Colorizer(final Model model) {
+		this.model = model;
 	}
 
 	public abstract RichTextView.Strip colorizeLine(String line);
 	
-	public static final Colorizer plain(RowViewer rowViewer) {
-		return new Colorizer(rowViewer) {
+	public static final Colorizer plain(Model model) {
+		return new Colorizer(model) {
 			@Override
 			public RichTextView.Strip colorizeLine(final String line) {
-				final RichTextView.Strip strip = rowViewer.strip();
+				final RichTextView.Strip strip = model.strip();
 				String chopped = line;
 				
 				if(chopped.length() > MAX_LINE_LENGTH) {
 					chopped = chopped.substring(0, MAX_LINE_LENGTH);
-					strip.add(rowViewer.text("(truncated)").bold().color(Colors.WARNING));
+					strip.add(model.text("(truncated)").bold().color(Colors.WARNING));
 				}
 
 				while(chopped.length() > TEXT_BLOCK_CUTOFF) {
-					strip.add(rowViewer.code(chopped.substring(0, TEXT_BLOCK_CUTOFF)).hgap(0));
+					strip.add(model.code(chopped.substring(0, TEXT_BLOCK_CUTOFF)).hgap(0));
 					chopped = chopped.substring(TEXT_BLOCK_CUTOFF);
 				}
-				strip.add(rowViewer.code(chopped).hgap(0));
+				strip.add(model.code(chopped).hgap(0));
 				return strip;
 			}
 		};
