@@ -100,6 +100,8 @@ public class RowViewer
 	}
 
 	private class RowModel extends Model {
+		private int fileIndex;
+
 		void addHeader(final ChangeSet changeSet) {
 			header("SHA:", changeSet.id);
 			header("Author:", changeSet.user);
@@ -108,10 +110,11 @@ public class RowViewer
 			header("Parents:", changeSet.parents());
 			header("Branch:", text(changeSet.branch).bold());
 			if (!changeSet.tags().isEmpty()) header("Tags:", text(changeSet.tags()).bold());
+			fileIndex = lines.size();
 			hr();
 		}
 
-		private void colorize(BufferedReader br, final Predicate<String> status) {
+		private void colorize(final BufferedReader br, final Predicate<String> status) {
 			try {
 				int oldStart = -1, newStart = -1;
 
@@ -129,6 +132,9 @@ public class RowViewer
 						final Matcher matcher = DIFF_PATTERN.matcher(line);
 						if(!matcher.matches()) throw new IllegalArgumentException("Malformed diff");
 						final String file = matcher.group(2);
+
+						addFileHeader(lineCount, file);
+
 						line().add(align(text(file).vgap(10).bold(), getParent().getWidth() - 50).background(Colors.FILE_BG));
 
 						if(file.endsWith(".java")) {
@@ -179,6 +185,11 @@ public class RowViewer
 					// Ignore
 				}
 			}
+		}
+
+		private void addFileHeader(int lineCount, String file) {
+			final String label = lineCount == 1 ? "Files:" : "";
+			lines.add(fileIndex++, strip().add(align(text(label).color(Colors.DE_EMPHASIZE).bold(), 100).right(), text(file)));
 		}
 
 		void addDiff(final Row row, final Predicate<String> status) {
