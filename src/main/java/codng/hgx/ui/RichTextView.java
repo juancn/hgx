@@ -8,6 +8,7 @@ import javax.swing.TransferHandler;
 import javax.swing.UIManager;
 import javax.swing.text.TextAction;
 import java.awt.Color;
+import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.FontMetrics;
@@ -72,11 +73,51 @@ public class RichTextView extends JComponent implements Scrollable {
 					repaint();
 				}
 			}
+
+			@Override
+			public void mouseClicked(MouseEvent e) {
+				if (e.getButton() == MouseEvent.BUTTON1) {
+					final Block block = blockAt(e.getX(), e.getY());
+					if (block instanceof Link) {
+						final Link link = (Link) block;
+						clearSelection();
+						normalCursor();
+						scrollRectToVisible(new Rectangle(
+								(int) link.anchor.position.x,
+								(int) link.anchor.position.y,
+								getWidth(),
+								getHeight()));
+					}
+				}
+			}
+
+			/** Used to avoid changing the cursor too often */
+			boolean handOn;
+			@Override
+			public void mouseMoved(MouseEvent e) {
+				final Block block = blockAt(e.getX(), e.getY());
+				final boolean onLink = block instanceof Link;
+				if (onLink && !handOn) {
+					this.handOn = true;
+					setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+				} else if(!onLink && handOn) {
+					normalCursor();
+				}
+			}
+
+			private void normalCursor() {
+				this.handOn = false;
+				setCursor(Cursor.getDefaultCursor());
+			}
 		};
 		addMouseListener(mouseAdapter);
 		addMouseMotionListener(mouseAdapter);
 
 		initCopy();
+	}
+
+	private void clearSelection() {
+		startBlock = endBlock = null;
 	}
 
 	private void initCopy() {
@@ -140,8 +181,7 @@ public class RichTextView extends JComponent implements Scrollable {
 	
 	public void clear() {
 		model.clear();
-		startBlock = null;
-		endBlock = null;
+		clearSelection();
 	}
 
 	public class Model {
@@ -364,6 +404,10 @@ public class RichTextView extends JComponent implements Scrollable {
 			return self();
 		}
 
+		Link linkTo(Block anchor) {
+			return new Link(this, anchor);
+		}
+
 		@SuppressWarnings("unchecked")
 		protected B self() { return (B) this; }
 
@@ -410,6 +454,59 @@ public class RichTextView extends JComponent implements Scrollable {
 		@Override
 		public String toString() {
 			return "";
+		}
+	}
+
+
+	public abstract class Container<T extends Container> extends Block<T> {
+		protected final Block block;
+
+		protected Container(Block block) {
+			this.block = block;
+		}
+
+		@Override
+		protected void draw(Graphics2D g) {
+			super.draw(g);
+			block.draw(g);
+		}
+
+		@Override
+		float height() {
+			return block.height();
+		}
+
+		@Override
+		float width() {
+			return block.width();
+		}
+
+		@Override
+		protected T position(float x, float y) {
+			block.position(x, y);
+			return super.position(x, y);
+		}
+
+		@Override
+		T color(Color c) {
+			block.color(c);
+			return super.color(c);
+		}
+
+		@Override
+		T background(Color c) {
+			block.background(c);
+			return super.background(c);
+		}
+
+		@Override
+		protected Block blockAt(float x) {
+			return block.blockAt(x);
+		}
+
+		@Override
+		public String toString() {
+			return block.toString();
 		}
 	}
 
@@ -502,6 +599,7 @@ public class RichTextView extends JComponent implements Scrollable {
 		private boolean bold;
 		private boolean monospaced;
 		private boolean italic;
+		private boolean underline;
 		private int size = 12;
 
 		Text(String text) {
@@ -528,17 +626,22 @@ public class RichTextView extends JComponent implements Scrollable {
 			return this;
 		}
 
+		public RowViewer.Text underline() {
+			underline = true;
+			return this;
+		}
+
 		public RowViewer.Text hgap(float hgap) {
 			this.hgap = hgap;
 			return this;
 		}
 
 		private FontMetrics fontMetrics() {
-			return RichTextView.this.fontMetrics(monospaced, bold, italic, size);
+			return RichTextView.this.fontMetrics(monospaced, bold, italic, underline, size);
 		}
 
 		private Font font() {
-			return RichTextView.this.font(monospaced, bold, italic, size);
+			return RichTextView.this.font(monospaced, bold, italic, underline, size);
 		}
 
 		@Override
@@ -575,13 +678,12 @@ public class RichTextView extends JComponent implements Scrollable {
 		}
 	}
 
-	public class HBox extends Block<RowViewer.HBox> {
+	public class HBox extends Container<RowViewer.HBox> {
 		private RichTextView.Align align = RichTextView.Align.LEFT;
-		private Block block;
 		private float width;
 
 		HBox(Block block, float width) {
-			this.block = block;
+			super(block);
 			this.width = width;
 			opaque = true;
 		}
@@ -602,12 +704,6 @@ public class RichTextView extends JComponent implements Scrollable {
 		}
 		
 		@Override
-		protected void draw(Graphics2D g) {
-			super.draw(g);
-			block.draw(g);
-		}
-
-		@Override
 		protected RowViewer.HBox position(float x, float y) {
 			super.position(x, y);
 			final float blockWidth = block.width();
@@ -627,20 +723,26 @@ public class RichTextView extends JComponent implements Scrollable {
 		}
 
 		@Override
-		float height() {
-			return block.height();
-		}
-
-		@Override
 		float width() {
 			return width;
 		}
+	}
+
+	public class Link extends Container<Link> {
+		private final Block anchor;
+
+		protected Link(final Block block, final Block anchor) {
+			super(block);
+			this.anchor = anchor;
+		}
 
 		@Override
-		public String toString() {
-			return block.toString();
+		protected Block blockAt(float x) {
+			final Block block = super.blockAt(x);
+			return block != null ? this : null;
 		}
 	}
+
 
 	public class HRuler extends Block<RowViewer.HRuler> {
 
@@ -700,17 +802,24 @@ public class RichTextView extends JComponent implements Scrollable {
 	}
 
 	private Map<Integer, Font> fontCache = new HashMap<>(); 
-	private Font font(boolean monospaced, boolean bold, boolean italic, int size) {
+	private Font font(boolean monospaced, boolean bold, boolean italic, boolean underline, int size) {
 		final int key = (monospaced?1<<30:0)
 				      | (bold      ?1<<29:0)
 				      | (italic    ?1<<28:0)
+				      | (underline ?1<<27:0)
 				      | size;
 
 		Font font = fontCache.get(key);
 		if(font == null) {
+
 			font = monospaced ? RichTextView.monospacedFont() : RichTextView.variableFont();
 			if (bold) font = font.deriveFont(Font.BOLD);
 			if (italic) font = font.deriveFont(Font.ITALIC);
+			if (underline) {
+				final Map<TextAttribute, Integer> attributes = new HashMap<>();
+				attributes.put(TextAttribute.UNDERLINE, TextAttribute.UNDERLINE_LOW_ONE_PIXEL);
+				font = font.deriveFont(attributes);
+			}
 			font = font.deriveFont((float)size);
 			fontCache.put(key, font);
 		}
@@ -718,8 +827,8 @@ public class RichTextView extends JComponent implements Scrollable {
 	}
 
 	private Map<Font, FontMetrics> fontMetricsCache = new HashMap<>();
-	private FontMetrics fontMetrics(boolean monospaced, boolean bold, boolean italic, int size) {
-		final Font font = font(monospaced, bold, italic, size);
+	private FontMetrics fontMetrics(boolean monospaced, boolean bold, boolean italic, boolean underline, int size) {
+		final Font font = font(monospaced, bold, italic, underline, size);
 		FontMetrics fontMetrics = fontMetricsCache.get(font);
 		if(fontMetrics == null) {
 			fontMetrics = getGraphics().getFontMetrics(font);

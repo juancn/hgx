@@ -16,6 +16,7 @@ public class Colors {
 	public static final Color WARNING = color("warning",255, 0, 0);
 	public static final Color DE_EMPHASIZE = color("de-emphasize",127, 127, 127);
 	public static final Color LOADING = color("loading",200, 200, 200);
+	public static final Color LINK = color("link",0, 0, 255);
 
 	// Background
 	public static final Color REMOVED_BG = color("background.removed",255, 238, 238);

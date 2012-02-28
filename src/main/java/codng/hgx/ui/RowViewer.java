@@ -133,9 +133,8 @@ public class RowViewer
 						if(!matcher.matches()) throw new IllegalArgumentException("Malformed diff");
 						final String file = matcher.group(2);
 
-						addFileHeader(lineCount, file);
-
-						line().add(align(text(file).vgap(10).bold(), getParent().getWidth() - 50).background(Colors.FILE_BG));
+						final Strip fileLine = line().add(align(text(file).vgap(10).bold(), getParent().getWidth() - 50).background(Colors.FILE_BG));
+						addFileHeader(lineCount, file, fileLine);
 
 						if(file.endsWith(".java")) {
 							colorizer = new JavaColorizer(this);
@@ -187,9 +186,13 @@ public class RowViewer
 			}
 		}
 
-		private void addFileHeader(int lineCount, String file) {
+		private void addFileHeader(int lineCount, String file, Block lineStart) {
 			final String label = lineCount == 1 ? "Files:" : "";
-			lines.add(fileIndex++, strip().add(align(text(label).color(Colors.DE_EMPHASIZE).bold(), 100).right(), text(file)));
+			lines.add(fileIndex++, strip()
+					.add(
+							align(text(label).color(Colors.DE_EMPHASIZE).bold(), 100).right(),
+							text(file).color(Colors.LINK).underline().linkTo(lineStart))
+			);
 		}
 
 		void addDiff(final Row row, final Predicate<String> status) {

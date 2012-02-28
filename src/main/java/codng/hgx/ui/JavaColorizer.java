@@ -1,6 +1,7 @@
 package codng.hgx.ui;
 
 import codng.hgx.ui.RichTextView.Model;
+import codng.hgx.ui.RichTextView.Text;
 
 import java.text.ParseException;
 
@@ -23,10 +24,10 @@ class JavaColorizer extends Colorizer {
 			if(unterminatedComment) {
 				final int terminator = line.indexOf("*/");
 				if(terminator == -1) {
-					strip.add(text(line).color(Colors.COMMENT).italic());
+					strip.add(comment(line));
 					return strip;
 				} else {
-					strip.add(text(line.substring(0, terminator + 2)).color(Colors.COMMENT).italic());
+					strip.add(comment(line.substring(0, terminator + 2)));
 					line = line.substring(terminator+2);
 					unterminatedComment = false;
 				}
@@ -41,30 +42,31 @@ class JavaColorizer extends Colorizer {
 				} else {
 					strip.add(text(line.substring(last.getEndOffset(), current.getStartOffset())));
 				}
-				
-				final RowViewer.Text token = text(current.getText());
-				strip.add(token);
 
-				switch (current.getType()) {
-					case ML_COMMENT:
-						if(!current.getText().toString().endsWith("*/")) unterminatedComment = true;
-					case SL_COMMENT:
-						token.color(Colors.COMMENT).italic(); break;
-					case STRING:
-					case CHAR_LITERAL:
-						token.color(Colors.STRING_LITERAL).bold(); break;
-					case ANNOTATION:
-						token.color(Colors.ANNOTATION);
-						break;
-					case INT_LITERAL:
-					case LONG_LITERAL:
-					case FLOAT_LITERAL:
-					case DOUBLE_LITERAL:
-						token.color(Colors.NUMBER);
-						break;
+				final RowViewer.Text token;
+				final CharSequence text = current.getText();
+				final TokenType tokenType = current.getType();
+
+				if (tokenType == TokenType.ML_COMMENT) {
+					if (!text.toString().endsWith("*/")) unterminatedComment = true;
+					token = comment(text);
+				} else if (tokenType == TokenType.SL_COMMENT) {
+					token = comment(text);
+				} else if (tokenType == TokenType.STRING || tokenType == TokenType.CHAR_LITERAL) {
+					token = string(text);
+				} else if (tokenType == TokenType.ANNOTATION) {
+					token = annotation(text);
+				} else if (tokenType == TokenType.INT_LITERAL
+						|| tokenType == TokenType.LONG_LITERAL
+						|| tokenType == TokenType.FLOAT_LITERAL
+						|| tokenType == TokenType.DOUBLE_LITERAL) {
+					token = number(text);
+				} else if (JavaLexer.isReserved(text)) {
+					token = keyword(text);
+				}else {
+					token = plain(text);
 				}
-
-				if(JavaLexer.isReserved(current.getText())) token.color(Colors.KEYWORD);
+				strip.add(token);
 			}
 		} catch (ParseException e) {
 			synchronized (System.err) {
@@ -74,6 +76,30 @@ class JavaColorizer extends Colorizer {
 			return strip.add(text(line));
 		}
 		return strip;
+	}
+
+	private Text plain(CharSequence text) {
+		return text(text);
+	}
+
+	private Text keyword(CharSequence text) {
+		return text(text).color(Colors.KEYWORD);
+	}
+
+	private Text number(CharSequence text) {
+		return text(text).color(Colors.NUMBER);
+	}
+
+	private Text annotation(CharSequence text) {
+		return text(text).color(Colors.ANNOTATION);
+	}
+
+	private Text string(CharSequence text) {
+		return text(text).color(Colors.STRING_LITERAL).bold();
+	}
+
+	private Text comment(CharSequence line) {
+		return text(line).color(Colors.COMMENT).italic();
 	}
 
 	private RowViewer.Text text(CharSequence text) {
