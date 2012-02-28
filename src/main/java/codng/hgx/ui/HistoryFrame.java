@@ -59,19 +59,11 @@ public class HistoryFrame
 
 		getContentPane().add(split, BorderLayout.CENTER);
 
-		addWindowListener(new WindowAdapter() {
-			@Override
-			public void windowClosing(WindowEvent e) {
-				savePrefs();
-				System.exit(0);
-			}
-		});
-		
 		historyTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
 			@Override
 			public void valueChanged(ListSelectionEvent e) {
 				if (!e.getValueIsAdjusting() && historyTable.getSelectedRow() < historyTableModel.getRowCount()) {
-					detail.setRow((Row) historyTableModel.getValueAt(historyTable.getSelectedRow(), 0));
+					detail.setData((Row) historyTableModel.getValueAt(historyTable.getSelectedRow(), 0));
 					detail.scrollRectToVisible(new Rectangle());
 				}
 			}

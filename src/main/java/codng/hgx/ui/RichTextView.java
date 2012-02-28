@@ -313,7 +313,7 @@ public class RichTextView extends JComponent implements Scrollable {
 	}
 
 	protected Block blockAt(float x, float y) {
-		return model.lines.get(clamp(lineAt(y))).blockAt(x);
+		return model.lines.isEmpty() ? null : model.lines.get(clamp(lineAt(y))).blockAt(x);
 	}
 
 	private int lineAt(float y) {
