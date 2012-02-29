@@ -174,16 +174,4 @@ public class Cache {
 		in.close();
 		return result;
 	}
-
-	public static <T> T deepCopy(T value) {
-		try {
-			final ByteArrayOutputStream baos = new ByteArrayOutputStream();
-			final ObjectOutputStream out = new ObjectOutputStream(baos);
-			out.writeObject(value);
-			out.close();
-			return Cast.force(new ObjectInputStream(new ByteArrayInputStream(baos.toByteArray())).readObject());
-		} catch (IOException  | ClassNotFoundException e) {
-			throw new Error(e);
-		}
-	}
 }

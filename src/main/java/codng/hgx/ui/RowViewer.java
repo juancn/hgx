@@ -3,19 +3,9 @@ package codng.hgx.ui;
 import codng.hgx.Cache;
 import codng.hgx.ChangeSet;
 import codng.hgx.Row;
-import codng.util.DefaultPredicate;
-import codng.util.Predicate;
 
-import javax.swing.SwingUtilities;
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class RowViewer
 		extends DiffViewer<Row> {

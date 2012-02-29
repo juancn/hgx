@@ -1,6 +1,5 @@
 package codng.hgx.ui;
 
-import codng.hgx.Hg;
 import codng.util.Command;
 
 import javax.swing.JFrame;

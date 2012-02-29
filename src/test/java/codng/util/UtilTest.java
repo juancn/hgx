@@ -9,6 +9,7 @@ import static codng.util.Sequences.asSequence;
 import static codng.util.Sequences.reverse;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertTrue;
 
 public class UtilTest {
@@ -67,6 +68,37 @@ public class UtilTest {
 	public void function() {
 		assertEquals("yay", Functions.identity().apply("yay"));
 		assertEquals("(42)", TO_STRING.compose(Functions.<String>identity()).apply(42));
+	}
+
+
+	@Test
+	public void tuple() {
+		final Tuple a = Tuple.make(1, 2);
+		final Tuple a1 = Tuple.make(1, 2);
+		final Tuple3 b = Tuple.make(1, 2, 3);
+		final Tuple3 b1 = Tuple.make(1, 2, 3);
+		final Tuple4 c = Tuple.make(1, 2, 3, 4);
+		final Tuple4 c1 = Tuple.make(1, 2, 3, 4);
+
+		assertNotSame(a, a1);
+		assertNotSame(b, b1);
+		assertNotSame(c, c1);
+
+		assertTrue(a.hashCode() != b.hashCode());
+		assertTrue(b.hashCode() != c.hashCode());
+		assertTrue(c.hashCode() != a.hashCode());
+
+		assertEquals(a, a1);
+		assertEquals(b, b1);
+		assertEquals(c, c1);
+
+		assertEquals(a.hashCode(), a1.hashCode());
+		assertEquals(b.hashCode(), b1.hashCode());
+		assertEquals(c.hashCode(), c1.hashCode());
+
+		assertEquals("(1, 2)", a.toString());
+		assertEquals("(1, 2, 3)", b.toString());
+		assertEquals("(1, 2, 3, 4)", c.toString());
 	}
 
 	private static final Predicate<Integer> EVEN = new DefaultPredicate<Integer>() {

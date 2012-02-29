@@ -342,7 +342,7 @@ public class Command
         @Override public void write(final byte[] b, final int off, final int len)
         {
             assert off >= 0 && len >= 0 && (off + len) <= b.length;
-                   // do nothing
+            // do nothing
         }
 
         static final OutputStream INSTANCE = new NullOutputStream();
