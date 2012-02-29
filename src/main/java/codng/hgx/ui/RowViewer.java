@@ -19,10 +19,6 @@ import java.util.regex.Pattern;
 
 public class RowViewer
 		extends DiffViewer<Row> {
-
-	private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
-	private ScheduledFuture<?> lastUpdate;
-
 	public RowViewer() {
 		this(null);
 	}
