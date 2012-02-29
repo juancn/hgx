@@ -122,16 +122,20 @@ public abstract class DiffViewer<T>
 					if(line.startsWith("diff")) {
 						skipDiff = false;
 						final Matcher matcher = DIFF_PATTERN.matcher(line);
-						if(!matcher.matches()) throw new IllegalArgumentException("Malformed diff");
-						final String file = matcher.group(2);
+						if (matcher.matches()) {
+							final String file = matcher.group(2);
 
-						final Strip fileLine = line().add(align(text(file).vgap(10).bold(), getParent().getWidth() - 50).background(Colors.FILE_BG));
-						addFileHeader(lineCount, file, fileLine);
+							final Strip fileLine = line().add(align(text(file).vgap(10).bold(), getParent().getWidth() - 50).background(Colors.FILE_BG));
+							addFileHeader(lineCount, file, fileLine);
 
-						if(file.endsWith(".java")) {
-							colorizer = new JavaColorizer(this);
+							if(file.endsWith(".java")) {
+								colorizer = new JavaColorizer(this);
+							} else {
+								colorizer = Colorizer.plain(this);
+							}     
 						} else {
-							colorizer = Colorizer.plain(this);
+							// Malformed diff
+							line().add(text("(malformed)").color(Colors.WARNING), code(line));
 						}
 					} else if(line.startsWith("new file mode")) { // I should check that we're still in the header
 						line().add(code(line).color(Colors.DE_EMPHASIZE));
