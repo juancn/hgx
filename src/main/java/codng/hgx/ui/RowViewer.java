@@ -55,5 +55,6 @@ public class RowViewer
 		}
 	}
 
-
+	// Javac bug
+	public void access$300() {}
 }

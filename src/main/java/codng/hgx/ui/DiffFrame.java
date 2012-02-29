@@ -116,6 +116,5 @@ public class DiffFrame
 		historyFrame.doShow();
 	}
 
-
 	private static final Preferences PREFERENCES = Preferences.userNodeForPackage(DiffFrame.class);
 }
