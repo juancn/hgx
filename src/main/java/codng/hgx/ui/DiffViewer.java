@@ -135,19 +135,19 @@ public abstract class DiffViewer<T>
 							}     
 						} else {
 							// Malformed diff
-							line().add(text("(malformed)").color(Colors.WARNING), code(line));
+							line().add(warning("(malformed)"), code(line));
 						}
 					} else if(line.startsWith("new file mode")) { // I should check that we're still in the header
-						line().add(code(line).color(Colors.DE_EMPHASIZE));
+						line().add(deemphasize(line));
 					} else if(line.startsWith("deleted file mode")) {
-						line().add(code(line).color(Colors.DE_EMPHASIZE));
-						line().add(text("File deleted").color(Colors.WARNING));
+						line().add(deemphasize(line));
+						line().add(warning("File deleted"));
 					} else if(line.startsWith("index ")) {
-						line().add(code(line).color(Colors.DE_EMPHASIZE));
+						line().add(deemphasize(line));
 					} else if(line.startsWith("Binary file ")) {
 						skipDiff = true;
 					} else if(line.startsWith("GIT binary patch")) {
-						line().add(text("(Binary file, content not rendered)").color(Colors.DE_EMPHASIZE));
+						line().add(deemphasize("(Binary file, content not rendered)"));
 						skipDiff = true;
 					} else if(line.startsWith("+++")) {
 						// Don't care
@@ -158,16 +158,16 @@ public abstract class DiffViewer<T>
 						if(!matcher.matches()) throw new IllegalArgumentException("Malformed diff");
 						oldStart = Integer.parseInt(matcher.group(1));
 						newStart = Integer.parseInt(matcher.group(3));
-						line().add(code(line).color(Colors.DE_EMPHASIZE));
+						line().add(deemphasize(line));
 						colorizer.reset();
 					} else if(line.startsWith("-")) {
-						numbered(oldStart, -1, colorizer.colorizeLine(line).background(Colors.REMOVED_BG));
+						numbered(oldStart, -1, removed(colorizer.colorizeLine(line)));
 						++oldStart;
 					} else if(line.startsWith("+")) {
-						numbered(-1, newStart, colorizer.colorizeLine(line).background(Colors.LINE_ADDED_BG));
+						numbered(-1, newStart, added(colorizer.colorizeLine(line)));
 						++newStart;
 					} else if(!skipDiff) {
-						numbered(oldStart, newStart, colorizer.colorizeLine(line));
+						numbered(oldStart, newStart, plain(colorizer.colorizeLine(line)));
 						++oldStart; ++newStart;
 					}
 				}
@@ -180,6 +180,39 @@ public abstract class DiffViewer<T>
 					// Ignore
 				}
 			}
+		}
+
+		protected Strip numbered(int oldStart, int newStart, Block block) {
+			return line()
+					.add(lineNo(oldStart))
+					.add(gap(2))
+					.add(lineNo(newStart))
+					.add(block);
+		}
+
+		private HBox lineNo(int lineNo) {
+			return align(code(lineNo == -1 ? "" : lineNo).size(10), 30).right().background(Colors.LINE_NO_BG);
+		}
+
+
+		private Text warning(String value) {
+			return text(value).color(Colors.WARNING);
+		}
+
+		private Strip plain(Strip block) {
+			return block;
+		}
+
+		private Strip added(Strip strip) {
+			return strip.background(Colors.LINE_ADDED_BG);
+		}
+
+		private Strip removed(Strip strip) {
+			return strip.background(Colors.REMOVED_BG);
+		}
+
+		private Text deemphasize(String line) {
+			return code(line).color(Colors.DE_EMPHASIZE);
 		}
 
 		private void addFileHeader(int lineCount, String file, Block lineStart) {

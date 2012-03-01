@@ -38,9 +38,9 @@ class JavaColorizer extends Colorizer {
 				current.getType() != TokenType.EOF;
 				last = current, current = lexer.next()) {
 				if (last == null) {
-					strip.add(text(line.substring(0, current.getStartOffset())));
+					strip.add(plain(line.substring(0, current.getStartOffset())));
 				} else {
-					strip.add(text(line.substring(last.getEndOffset(), current.getStartOffset())));
+					strip.add(plain(line.substring(last.getEndOffset(), current.getStartOffset())));
 				}
 
 				final RowViewer.Text token;
@@ -73,37 +73,37 @@ class JavaColorizer extends Colorizer {
 				System.err.println("Line: " + line);
 				e.printStackTrace();
 			}
-			return strip.add(text(line));
+			return strip.add(plain(line));
 		}
 		return strip;
 	}
 
 	private Text plain(CharSequence text) {
-		return text(text);
+		return TextStyle.CODE.applyTo(gapless(text));
 	}
 
 	private Text keyword(CharSequence text) {
-		return text(text).color(Colors.KEYWORD);
+		return TextStyle.KEYWORD.applyTo(gapless(text));
 	}
 
 	private Text number(CharSequence text) {
-		return text(text).color(Colors.NUMBER);
+		return TextStyle.NUMBER.applyTo(gapless(text));
 	}
 
 	private Text annotation(CharSequence text) {
-		return text(text).color(Colors.ANNOTATION);
+		return TextStyle.ANNOTATION.applyTo(gapless(text));
 	}
 
 	private Text string(CharSequence text) {
-		return text(text).color(Colors.STRING_LITERAL).bold();
+		return TextStyle.STRING_LITERAL.applyTo(gapless(text));
 	}
 
 	private Text comment(CharSequence line) {
-		return text(line).color(Colors.COMMENT).italic();
+		return TextStyle.COMMENT.applyTo(gapless(line));
 	}
 
-	private RowViewer.Text text(CharSequence text) {
-		return model.code(text.toString()).hgap(0);
+	private RowViewer.Text gapless(CharSequence text) {
+		return model.text(text.toString()).hgap(0);
 	}
 
 	private RowViewer.Strip strip() {

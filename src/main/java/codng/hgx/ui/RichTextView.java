@@ -211,15 +211,7 @@ public class RichTextView extends JComponent implements Scrollable {
 			header(label, text(value));
 		}
 
-		protected Strip numbered(int oldStart, int newStart, Block block) {
-			return line()
-					.add(align(code(oldStart == -1 ? "" : oldStart).size(10), 30).right().background(Colors.LINE_NO_BG))
-					.add(gap(2))
-					.add(align(code(newStart == -1 ? "" : newStart).size(10), 30).right().background(Colors.LINE_NO_BG))
-					.add(block);
-		}
-
-		private Block<Block> gap(final int gap) {
+		protected Block<Block> gap(final int gap) {
 			return new Block<Block>() {
 				@Override
 				float height() {
@@ -234,7 +226,7 @@ public class RichTextView extends JComponent implements Scrollable {
 		}
 
 		Text code(Object line) {
-			return text(line).monospaced();
+			return TextStyle.CODE.applyTo(text(line));
 		}
 
 		Strip strip() {
@@ -386,25 +378,25 @@ public class RichTextView extends JComponent implements Scrollable {
 		private Color color = Color.BLACK;
 		private Color background = Color.WHITE;
 
-		B color(int r, int g, int b) {
+		public B color(int r, int g, int b) {
 			return color(new Color(r, g, b));
 		}
 
-		B background(int r, int g, int b) {
+		public B background(int r, int g, int b) {
 			return background(new Color(r, g, b));
 		}
 
-		B color(final Color c) {
+		public B color(final Color c) {
 			color = c;
 			return self();
 		}
 
-		B background(final Color c) {
+		public B background(final Color c) {
 			background = c;
 			return self();
 		}
 
-		Link linkTo(Block anchor) {
+		public Link linkTo(Block anchor) {
 			return new Link(this, anchor);
 		}
 
@@ -488,13 +480,13 @@ public class RichTextView extends JComponent implements Scrollable {
 		}
 
 		@Override
-		T color(Color c) {
+		public T color(Color c) {
 			block.color(c);
 			return super.color(c);
 		}
 
 		@Override
-		T background(Color c) {
+		public T background(Color c) {
 			block.background(c);
 			return super.background(c);
 		}
@@ -611,8 +603,21 @@ public class RichTextView extends JComponent implements Scrollable {
 			this.text = TAB_PATTERN.matcher(text).replaceAll("    ");
 		}
 
+		public RowViewer.Text monospaced() {
+			return monospaced(true);
+		}
+
+		public RowViewer.Text monospaced(final boolean monospaced) {
+			this.monospaced = monospaced;
+			return this;
+		}
+
 		public RowViewer.Text bold() {
-			bold = true;
+			return bold(true);
+		}
+
+		public RowViewer.Text bold(final boolean v) {
+			this.bold = v;
 			return this;
 		}
 
@@ -622,12 +627,20 @@ public class RichTextView extends JComponent implements Scrollable {
 		}
 		
 		public RowViewer.Text italic() {
-			italic = true;
+			return italic(true);
+		}
+
+		public RowViewer.Text italic(final boolean v) {
+			italic = v;
 			return this;
 		}
 
 		public RowViewer.Text underline() {
-			underline = true;
+			return underline(true);
+		}
+
+		public RowViewer.Text underline(final boolean v) {
+			underline = v;
 			return this;
 		}
 
@@ -662,11 +675,6 @@ public class RichTextView extends JComponent implements Scrollable {
 			return fontMetrics().stringWidth(text) + hgap;
 		}
 
-		public RowViewer.Text monospaced() {
-			monospaced = true;
-			return this;
-		}
-
 		public RowViewer.Text vgap(final float vgap) {
 			this.vgap = vgap;
 			return this;
@@ -688,17 +696,17 @@ public class RichTextView extends JComponent implements Scrollable {
 			opaque = true;
 		}
 
-		RowViewer.HBox right() {
+		public RowViewer.HBox right() {
 			align = RichTextView.Align.RIGHT;
 			return this;
 		}
 
-		RowViewer.HBox left() {
+		public RowViewer.HBox left() {
 			align = RichTextView.Align.LEFT;
 			return this;
 		}
 
-		RowViewer.HBox center() {
+		public RowViewer.HBox center() {
 			align = RichTextView.Align.CENTER;
 			return this;
 		}
