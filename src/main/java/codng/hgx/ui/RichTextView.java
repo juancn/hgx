@@ -204,7 +204,7 @@ public class RichTextView extends JComponent implements Scrollable {
 		}
 
 		protected void header(String label, Text value) {
-			lines.add(strip().add(align(text(label).color(Colors.DE_EMPHASIZE).bold(), 100).right(), value));
+			lines.add(strip().add(align(TextStyle.LABEL.applyTo(text(label)), 100).right(), value));
 		}
 
 		protected void header(String label, Object value) {

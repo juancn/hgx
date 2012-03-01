@@ -219,8 +219,8 @@ public abstract class DiffViewer<T>
 			final String label = lineCount == 1 ? "Files:" : "";
 			lines.add(fileIndex++, strip()
 					.add(
-							align(text(label).color(Colors.DE_EMPHASIZE).bold(), 100).right(),
-							text(file).color(Colors.LINK).underline().linkTo(lineStart))
+							align(TextStyle.LABEL.applyTo(text(label)), 100).right(),
+							TextStyle.LINK.applyTo(text(file)).linkTo(lineStart))
 			);
 		}
 

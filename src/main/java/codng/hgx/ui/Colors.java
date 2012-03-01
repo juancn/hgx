@@ -25,19 +25,18 @@ public class Colors {
 	public static final Color LINE_NO_BG = color("background.line-no",250, 250, 250);
 
 	private static Color color(final String key, final int r, final int g, final int b) {
-		return parse(key, new Color(r,g,b));
+		return getColor(key, new Color(r, g, b));
 	}
 
-	private static Color parse(final String key, final Color defaultColor) {
-		final String property = System.getProperty(key);
-		if (property != null) {
+	public static Color getColor(final String property, final Color defVal) {
+		final String property1 = System.getProperty(property);
+		if (property1 != null) {
 			// Values are of the form "rgb(255,0,0)"
-			final Matcher matcher = Pattern.compile("rgb\\(\\s*(\\d+)\\s*,\\s*(\\d+)\\s*,\\s*(\\d+)\\s*\\)").matcher(property);
+			final Matcher matcher = Pattern.compile("rgb\\(\\s*(\\d+)\\s*,\\s*(\\d+)\\s*,\\s*(\\d+)\\s*\\)").matcher(property1);
 			if(matcher.matches()) {
 				return new Color(Integer.parseInt(matcher.group(1)),Integer.parseInt(matcher.group(2)), Integer.parseInt(matcher.group(3)));
 			}
 		}
-		return defaultColor;
+		return defVal;
 	}
-
 }
