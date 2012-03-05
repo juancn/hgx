@@ -18,7 +18,6 @@ public class HtmlTransform
 {
 	private final StringWriter sw = new StringWriter();
 	private final PrintWriter pw = new PrintWriter(sw);
-	private boolean monospaced;
 
 	public HtmlTransform() {
 		pw.println("<html><body>");
@@ -26,28 +25,28 @@ public class HtmlTransform
 
 	public void visitLine(Strip strip) {
 		visit(strip);
-		if (monospaced) {
-			pw.println();
-		} else {
-			pw.println("<br/>");
-		}
+		pw.println("<br/>");
 	}
 
 	@Override
 	public void visit(Text text) {
-		if(text.isMonospaced() && !monospaced) {
-			monospaced = true;
-			pw.print("<pre>");
-		}
-		if(monospaced && !text.isMonospaced()) {
-			monospaced = false;
-			pw.print("</pre>");
-		}
-		if(text.isBold()) pw.print("<b>");
-		if(text.isItalic()) pw.print("<i>");
-		pw.printf("<font color=\"%s\">%s</font>", rgb(text.color(false)), text.text());
-		if(text.isItalic()) pw.print("</i>");
-		if(text.isBold()) pw.print("</b>");
+		pw.print("<span style=\"");
+		if(!text.color(false).equals(Color.BLACK)) pw.printf("color:%s;", rgb(text.color(false)));
+		if(!text.background(false).equals(Color.WHITE)) pw.printf("background-color:%s;", rgb(text.background(false)));
+		if(text.isItalic()) pw.print("font-style:italic;");
+		if(text.isBold()) pw.print("font-weight:bold;");
+		if(text.isMonospaced()) pw.print("font-family:monaco,courier;");
+		if(text.hgap() != 0) pw.printf("margin-left:%spx;margin-right:%spx;", text.hgap()/2, text.hgap()/2);
+		pw.printf("font-size:%d;", text.size());
+		pw.printf("\">%s</span>", htmlEscape(text.text()));
+	}
+
+	private String htmlEscape(String text) {
+		// Puaj!
+		return text
+				.replace(" ", "&nbsp;")
+				.replace("<", "&lt;")
+				.replace(">", "&gt;");
 	}
 
 	private String rgb(Color color) {
@@ -68,8 +67,9 @@ public class HtmlTransform
 
 	@Override
 	public void visit(HBox hBox) {
+		pw.printf("<div style=\"display:inline-block; width:%.0fpx; text-align:%s;\" >", hBox.width(), hBox.align().toString().toLowerCase());
 		hBox.block.visit(this);
-		pw.print(" ");
+		pw.print("</div>");
 	}
 
 	@Override

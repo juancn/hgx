@@ -656,7 +656,11 @@ public class RichTextView extends JComponent implements Scrollable {
 			this.size = size;
 			return this;
 		}
-		
+
+		public int size() {
+			return size;
+		}
+
 		public RowViewer.Text italic() {
 			return italic(true);
 		}
@@ -729,6 +733,14 @@ public class RichTextView extends JComponent implements Scrollable {
 
 		public boolean isItalic() {
 			return italic;
+		}
+
+		public boolean isUnderline() {
+			return underline;
+		}
+
+		public float hgap() {
+			return hgap;
 		}
 	}
 
