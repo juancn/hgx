@@ -18,6 +18,8 @@ import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.RenderingHints;
 import java.awt.datatransfer.DataFlavor;
+import java.awt.datatransfer.FlavorMap;
+import java.awt.datatransfer.SystemFlavorMap;
 import java.awt.datatransfer.Transferable;
 import java.awt.datatransfer.UnsupportedFlavorException;
 import java.awt.event.ActionEvent;
@@ -36,6 +38,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.regex.Pattern;
 
 import static java.lang.Math.max;
@@ -121,6 +124,14 @@ public class RichTextView extends JComponent implements Scrollable {
 	}
 
 	private void initCopy() {
+		final DataFlavor html = new DataFlavor("text/html", "Html");
+		if (OS_X) {
+			// Java for OSX doesn't seem to have a native registered for HTML
+			final SystemFlavorMap flavorMap = (SystemFlavorMap) SystemFlavorMap.getDefaultFlavorMap();
+			flavorMap.addFlavorForUnencodedNative("public.html", html);
+			flavorMap.addUnencodedNativeForFlavor(html, "public.html");
+		}
+
 		setTransferHandler(new TransferHandler() {
 			@Override
 			public int getSourceActions(JComponent c) {
@@ -131,9 +142,10 @@ public class RichTextView extends JComponent implements Scrollable {
 			protected Transferable createTransferable(JComponent c) {
 				return new Transferable() {
 					private final DataFlavor[] dataFlavors = {
+							html,
 							new DataFlavor("text/plain", "Plain text"),
 					};
-					
+
 					@Override
 					public DataFlavor[] getTransferDataFlavors() {
 						return dataFlavors;
@@ -146,7 +158,7 @@ public class RichTextView extends JComponent implements Scrollable {
 
 					@Override
 					public Object getTransferData(DataFlavor flavor) throws UnsupportedFlavorException, IOException {
-						return serializeText(getSelectedText());
+						return serializeText(flavor.getMimeType().contains("text/html") ? getSelectedHtml() : getSelectedText());
 					}
 
 					private Object serializeText(String selectedText) throws IOException {
@@ -212,17 +224,7 @@ public class RichTextView extends JComponent implements Scrollable {
 		}
 
 		protected Block<Block> gap(final int gap) {
-			return new Block<Block>() {
-				@Override
-				float height() {
-					return 0;
-				}
-
-				@Override
-				float width() {
-					return gap;
-				}
-			};
+			return new Gap(gap);
 		}
 
 		Text code(Object line) {
@@ -241,7 +243,6 @@ public class RichTextView extends JComponent implements Scrollable {
 			return new Text(String.valueOf(value));
 		}
 	}
-	
 	public void setModel(final Model model) {
 		this.model = model;
 		revalidate();
@@ -279,6 +280,31 @@ public class RichTextView extends JComponent implements Scrollable {
 				sb.append(strip);				
 			}
 			return sb.toString();
+		}
+		return "";
+	}
+
+	public String getSelectedHtml() {
+		System.out.println("RichTextView.getSelectedHtml");
+		if(startBlock != null && endBlock != null)  {
+			final float y0, y1;
+			if(selectionStart.y < selectionEnd.y) {
+				y0 = selectionStart.y;
+				y1 = selectionEnd.y;
+			} else {
+				y0 = selectionEnd.y;
+				y1 = selectionStart.y;
+			}
+
+			final int line0 = lineAt(y0);
+			final int line1 = lineAt(y1);
+
+			
+			final HtmlTransform html = new HtmlTransform();
+			for (int i = line0; i <= line1; i++) {
+				html.visitLine(model.lines.get(i));
+			}
+			return html.toString();
 		}
 		return "";
 	}
@@ -447,6 +473,8 @@ public class RichTextView extends JComponent implements Scrollable {
 		public String toString() {
 			return "";
 		}
+		
+		abstract void visit(BlockVisitor visitor);
 	}
 
 
@@ -572,6 +600,9 @@ public class RichTextView extends JComponent implements Scrollable {
 		}
 
 		@Override
+		void visit(BlockVisitor visitor) { visitor.visit(this); }
+
+		@Override
 		public String toString() {
 			final StringBuilder sb = new StringBuilder();
 			for (int i = 0; i < blocks.size(); i++) {
@@ -579,6 +610,10 @@ public class RichTextView extends JComponent implements Scrollable {
 				sb.append(block);
 			}
 			return sb.toString(); 
+		}
+
+		public List<Block> blocks() {
+			return blocks;
 		}
 	}
 
@@ -601,6 +636,10 @@ public class RichTextView extends JComponent implements Scrollable {
 		public void text(String text) {
 			// Quick & Dirty fix for tabs
 			this.text = TAB_PATTERN.matcher(text).replaceAll("    ");
+		}
+
+		public String text() {
+			return this.text;
 		}
 
 		public RowViewer.Text monospaced() {
@@ -681,8 +720,23 @@ public class RichTextView extends JComponent implements Scrollable {
 		}
 
 		@Override
+		void visit(BlockVisitor visitor) { visitor.visit(this); }
+
+		@Override
 		public String toString() {
 			return hgap == 0?text : " " + text;
+		}
+
+		public boolean isMonospaced() {
+			return monospaced;
+		}
+
+		public boolean isBold() {
+			return bold;
+		}
+
+		public boolean isItalic() {
+			return italic;
 		}
 	}
 
@@ -734,6 +788,13 @@ public class RichTextView extends JComponent implements Scrollable {
 		float width() {
 			return width;
 		}
+
+		@Override
+		void visit(BlockVisitor visitor) { visitor.visit(this); }
+
+		public Align align() {
+			return align;
+		}
 	}
 
 	public class Link extends Container<Link> {
@@ -749,6 +810,9 @@ public class RichTextView extends JComponent implements Scrollable {
 			final Block block = super.blockAt(x);
 			return block != null ? this : null;
 		}
+
+		@Override
+		void visit(BlockVisitor visitor) { visitor.visit(this); }
 	}
 
 
@@ -777,6 +841,30 @@ public class RichTextView extends JComponent implements Scrollable {
 		float width() {
 			return width;
 		}
+
+		@Override
+		void visit(BlockVisitor visitor) { visitor.visit(this); }
+	}
+
+	public class Gap extends Block<Block> {
+		private final int gap;
+
+		public Gap(int gap) {
+			this.gap = gap;
+		}
+
+		@Override
+		float height() {
+			return 0;
+		}
+
+		@Override
+		float width() {
+			return gap;
+		}
+
+		@Override
+		void visit(BlockVisitor visitor) { visitor.visit(this); }
 	}
 
 	enum Align { LEFT, CENTER, RIGHT }
@@ -865,4 +953,13 @@ public class RichTextView extends JComponent implements Scrollable {
 	}
 
 	private static final boolean OS_X = System.getProperty("os.name").equals("Mac OS X");
+	
+	public interface BlockVisitor {
+		void visit(Text text);
+		void visit(Gap gap);
+		void visit(Strip strip);
+		void visit(HBox hBox);
+		void visit(Link link);
+		void visit(HRuler hRuler);
+	}
 }
