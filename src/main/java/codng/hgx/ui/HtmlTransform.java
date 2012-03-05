@@ -67,7 +67,8 @@ public class HtmlTransform
 
 	@Override
 	public void visit(HBox hBox) {
-		pw.printf("<div style=\"display:inline-block; width:%.0fpx; text-align:%s;\" >", hBox.width(), hBox.align().toString().toLowerCase());
+		pw.printf("<div style=\"display:inline-block; width:%.0fpx; text-align:%s; background-color:%s;\" >",
+				hBox.width(), hBox.align().toString().toLowerCase(), rgb(hBox.background(false)));
 		hBox.block.visit(this);
 		pw.print("</div>");
 	}

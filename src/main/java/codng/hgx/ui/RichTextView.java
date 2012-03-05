@@ -715,6 +715,10 @@ public class RichTextView extends JComponent implements Scrollable {
 			return this;
 		}
 
+		public float vgap() {
+			return vgap;
+		}
+
 		@Override
 		void visit(BlockVisitor visitor) { visitor.visit(this); }
 
