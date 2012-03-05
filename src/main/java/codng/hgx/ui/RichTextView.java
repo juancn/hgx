@@ -1,5 +1,8 @@
 package codng.hgx.ui;
 
+import codng.util.DefaultFunction;
+import codng.util.Tuple;
+
 import javax.swing.Action;
 import javax.swing.JComponent;
 import javax.swing.KeyStroke;
@@ -18,7 +21,6 @@ import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.RenderingHints;
 import java.awt.datatransfer.DataFlavor;
-import java.awt.datatransfer.FlavorMap;
 import java.awt.datatransfer.SystemFlavorMap;
 import java.awt.datatransfer.Transferable;
 import java.awt.datatransfer.UnsupportedFlavorException;
@@ -38,7 +40,6 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.regex.Pattern;
 
 import static java.lang.Math.max;
@@ -260,23 +261,12 @@ public class RichTextView extends JComponent implements Scrollable {
 	}
 
 	public String getSelectedText() {
-		if(startBlock != null && endBlock != null)  {
-			final float y0, y1;
-			if(selectionStart.y < selectionEnd.y) {
-				y0 = selectionStart.y;
-				y1 = selectionEnd.y;
-			} else {
-				y0 = selectionEnd.y;
-				y1 = selectionStart.y;
-			}
-			
-			final int line0 = lineAt(y0);
-			final int line1 = lineAt(y1);
-
+		final Tuple<Integer, Integer> range = getSelectedRange();
+		if (range != null) {
 			StringBuilder sb = new StringBuilder();
-			for (int i = line0; i <= line1; i++) {
+			for (int i = range.first; i <= range.second; i++) {
 				Strip strip = model.lines.get(i);
-				if( i != line0 ) sb.append('\n');
+				if( i != range.first ) sb.append('\n');
 				sb.append(strip);				
 			}
 			return sb.toString();
@@ -285,7 +275,18 @@ public class RichTextView extends JComponent implements Scrollable {
 	}
 
 	public String getSelectedHtml() {
-		System.out.println("RichTextView.getSelectedHtml");
+		final Tuple<Integer, Integer> range = getSelectedRange();
+		if (range != null) {
+			final HtmlTransform html = new HtmlTransform();
+			for (int i = range.first; i <= range.second; i++) {
+				html.visitLine(model.lines.get(i));
+			}
+			return html.toString();
+		}
+		return "";
+	}
+
+	private Tuple<Integer, Integer> getSelectedRange() {
 		if(startBlock != null && endBlock != null)  {
 			final float y0, y1;
 			if(selectionStart.y < selectionEnd.y) {
@@ -295,18 +296,9 @@ public class RichTextView extends JComponent implements Scrollable {
 				y0 = selectionEnd.y;
 				y1 = selectionStart.y;
 			}
-
-			final int line0 = lineAt(y0);
-			final int line1 = lineAt(y1);
-
-			
-			final HtmlTransform html = new HtmlTransform();
-			for (int i = line0; i <= line1; i++) {
-				html.visitLine(model.lines.get(i));
-			}
-			return html.toString();
+			return Tuple.make(lineAt(y0), lineAt(y1));
 		}
-		return "";
+		return null;
 	}
 
 	@Override
