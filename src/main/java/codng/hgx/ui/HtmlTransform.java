@@ -26,7 +26,11 @@ public class HtmlTransform
 
 	public void visitLine(Strip strip) {
 		visit(strip);
-		pw.println("<br/>");
+		if (monospaced) {
+			pw.println();
+		} else {
+			pw.println("<br/>");
+		}
 	}
 
 	@Override
@@ -39,11 +43,11 @@ public class HtmlTransform
 			monospaced = false;
 			pw.print("</pre>");
 		}
-		if(text.isBold()) pw.print("<bold>");
-		if(text.isItalic()) pw.print("<italic>");
+		if(text.isBold()) pw.print("<b>");
+		if(text.isItalic()) pw.print("<i>");
 		pw.printf("<font color=\"%s\">%s</font>", rgb(text.color(false)), text.text());
-		if(text.isItalic()) pw.print("</italic>");
-		if(text.isBold()) pw.print("</bold>");
+		if(text.isItalic()) pw.print("</i>");
+		if(text.isBold()) pw.print("</b>");
 	}
 
 	private String rgb(Color color) {
