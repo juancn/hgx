@@ -1,6 +1,5 @@
 package codng.hgx.ui;
 
-import codng.util.DefaultFunction;
 import codng.util.Tuple;
 
 import javax.swing.Action;
@@ -125,13 +124,6 @@ public class RichTextView extends JComponent implements Scrollable {
 	}
 
 	private void initCopy() {
-		final DataFlavor html = new DataFlavor("text/html", "Html");
-		if (OS_X) {
-			// Java for OSX doesn't seem to have a native registered for HTML
-			final SystemFlavorMap flavorMap = (SystemFlavorMap) SystemFlavorMap.getDefaultFlavorMap();
-			flavorMap.addFlavorForUnencodedNative("public.html", html);
-			flavorMap.addUnencodedNativeForFlavor(html, "public.html");
-		}
 
 		setTransferHandler(new TransferHandler() {
 			@Override
@@ -143,7 +135,7 @@ public class RichTextView extends JComponent implements Scrollable {
 			protected Transferable createTransferable(JComponent c) {
 				return new Transferable() {
 					private final DataFlavor[] dataFlavors = {
-							html,
+							HTML_DATA_FLAVOR,
 							new DataFlavor("text/plain", "Plain text"),
 					};
 
@@ -961,7 +953,16 @@ public class RichTextView extends JComponent implements Scrollable {
 	}
 
 	private static final boolean OS_X = System.getProperty("os.name").equals("Mac OS X");
-	
+	private static final DataFlavor HTML_DATA_FLAVOR = new DataFlavor("text/html", "Html");
+	static {
+		if (OS_X) {
+			// Java for OSX doesn't seem to have a native registered for HTML
+			final SystemFlavorMap flavorMap = (SystemFlavorMap) SystemFlavorMap.getDefaultFlavorMap();
+			flavorMap.addFlavorForUnencodedNative("public.html", HTML_DATA_FLAVOR);
+			flavorMap.addUnencodedNativeForFlavor(HTML_DATA_FLAVOR, "public.html");
+		}
+	}
+
 	public interface BlockVisitor {
 		void visit(Text text);
 		void visit(Gap gap);
