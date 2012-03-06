@@ -60,9 +60,13 @@ public class HtmlTransform
 
 	@Override
 	public void visit(Strip strip) {
+
+		boolean hasBackground = !strip.background(false).equals(Color.WHITE);
+		if(hasBackground) pw.printf("<span style=\"background-color:%s;\"", rgb(strip.background(false)));
 		for (Block block : strip.blocks()) {
 			block.visit(this);
 		}
+		if(hasBackground) pw.print("</span>");
 	}
 
 	@Override
