@@ -237,7 +237,7 @@ public class ChangeSet
 		final Id id = Id.parse(firstOr(entries, "changeset", null));
 		final String branch = firstOr(entries, "branch", "default");
 		final String user = firstOr(entries, "user", "");
-		final Date date = DATE_FORMAT.parse(firstOr(entries, "date", ""));
+		final Date date = DATE_FORMAT.get().parse(firstOr(entries, "date", ""));
 		final String summary = firstOr(entries, "summary", "");
 		final ChangeSet changeSet = new ChangeSet(id, branch, user, date, summary);
 		changeSet.parents.addAll(parents(entries));
@@ -305,6 +305,11 @@ public class ChangeSet
 	}
 
 	/** Thu Jan 12 09:54:28 2012 -0800 */
-	private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("EEE MMM d HH:mm:ss yyyy Z", Locale.ENGLISH);
+	private static final ThreadLocal<SimpleDateFormat> DATE_FORMAT = new ThreadLocal<SimpleDateFormat>() {
+		@Override
+		protected SimpleDateFormat initialValue() {
+			return new SimpleDateFormat("EEE MMM d HH:mm:ss yyyy Z", Locale.ENGLISH);
+		}
+	};
 	private static final long serialVersionUID = 4;
 }
