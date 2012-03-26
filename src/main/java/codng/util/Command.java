@@ -77,10 +77,17 @@ public class Command
             in.close();
         }
 
-        int exitStaus = process.waitFor();
-        out.join();
+		final int exitStatus;
+		try {
+			exitStatus = process.waitFor();
+		} catch (InterruptedException e) {
+			out.interrupt();
+			err.interrupt();
+			throw e;
+		}
+		out.join();
         err.join();        
-        return exitStaus;
+        return exitStatus;
     }
 
     public Callable<Integer> start()

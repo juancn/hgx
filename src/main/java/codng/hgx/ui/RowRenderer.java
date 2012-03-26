@@ -14,9 +14,15 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.Stroke;
+import java.awt.color.ColorSpace;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 
 class RowRenderer implements TableCellRenderer {
 	private static final BasicStroke THICK = new BasicStroke(2.0f);
+	private static final MessageDigest DIGEST = createDigest();
+	public static final ColorSpace LAB = new CIELab();
+
 	@Override
 	public Component getTableCellRendererComponent(final JTable table, Object value, final boolean isSelected, boolean hasFocus, final int rowIndex, final int columnIndex) {
 		final Row row = (Row) value;
@@ -115,7 +121,11 @@ class RowRenderer implements TableCellRenderer {
 			}
 
 			private Color branchColor(String branch) {
-				return new Color(Color.HSBtoRGB((Math.abs(branch.hashCode())%30)/30f, 0.3f, 1f));
+				final byte[] digest = DIGEST.digest(branch.getBytes());
+				final float a = digest[0]*0.9f;
+				final float b = digest[1]*0.6f;
+				float[] rgb = LAB.toRGB(new float[]{80f, a, b});
+				return new Color(rgb[0], rgb[1], rgb[2]);
 			}
 
 			private void drawBullet(Graphics2D g, int cellSize, int yoff, int xoff) {
@@ -133,5 +143,13 @@ class RowRenderer implements TableCellRenderer {
 			}
 		};
 		return renderer;
+	}
+
+	private static MessageDigest createDigest(){
+		try {
+			return MessageDigest.getInstance("MD5");
+		} catch (NoSuchAlgorithmException e) {
+			throw new Error(e);
+		}
 	}
 }
