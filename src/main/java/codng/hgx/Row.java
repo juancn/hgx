@@ -43,7 +43,7 @@ public class Row {
 		Cell branch = null;
 		for (Cell cell : cells) {
 			if(cell.id.equals(this.changeSet.id)) {
-				cell.branch = changeSet.branch;
+				cell.branch = this.changeSet.branch;
 				for (Id parent : this.changeSet.parents()) {
 					branch = updateBranch(changeSet, result, branch, cell, parent);
 				}
@@ -51,7 +51,7 @@ public class Row {
 				branch = updateBranch(changeSet, result, branch, cell, cell.id);
 			}
 		}
-		
+
 		if(branch == null) {
 			result.add(new Cell(changeSet.id, null));
 		}
