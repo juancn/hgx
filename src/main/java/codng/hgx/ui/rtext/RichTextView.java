@@ -1,5 +1,6 @@
-package codng.hgx.ui;
+package codng.hgx.ui.rtext;
 
+import codng.hgx.ui.HtmlTransform;
 import codng.util.Tuple;
 
 import javax.swing.Action;
@@ -7,7 +8,6 @@ import javax.swing.JComponent;
 import javax.swing.KeyStroke;
 import javax.swing.Scrollable;
 import javax.swing.TransferHandler;
-import javax.swing.UIManager;
 import javax.swing.text.TextAction;
 import java.awt.Color;
 import java.awt.Cursor;
@@ -27,24 +27,19 @@ import java.awt.event.ActionEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.font.TextAttribute;
-import java.awt.geom.Line2D;
-import java.awt.geom.Point2D;
-import java.awt.geom.Rectangle2D;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
 import static java.lang.Math.max;
 
 public class RichTextView extends JComponent implements Scrollable {
-	private Model model = new Model();
+	private RichTextViewModel<? extends RichTextView> model = new RichTextViewModel<>(this);
 	protected Block startBlock;
 	protected Point selectionStart;
 	protected Block endBlock;
@@ -189,61 +184,10 @@ public class RichTextView extends JComponent implements Scrollable {
 		clearSelection();
 	}
 
-	public class Model {
-		protected final List<Strip> lines = new ArrayList<>();
-
-		public Model() { }
-
-		public void clear() {
-			lines.clear();
-		}
-
-		Strip line() {
-			final Strip line = strip().lpad(25);
-			lines.add(line);
-			return line;
-		}
-
-		protected void hr() {
-			lines.add(strip().add(new HRuler(getParent().getWidth())));
-		}
-
-		protected void header(String label, Text value) {
-			lines.add(strip().add(align(TextStyle.LABEL.applyTo(text(label)), 100).right(), value));
-		}
-
-		protected void header(String label, Object value) {
-			header(label, text(value));
-		}
-
-		protected Block<Block> gap(final int gap) {
-			return new Gap(gap);
-		}
-
-		Text code(Object line) {
-			return TextStyle.CODE.applyTo(text(line));
-		}
-
-		Strip strip() {
-			return new Strip();
-		}
-
-		protected HBox align(Block block, float width) {
-			return new HBox(block, width);
-		}
-
-		protected Text text(Object value) {
-			return new Text(String.valueOf(value));
-		}
-	}
-	public void setModel(final Model model) {
+	public void setModel(final RichTextViewModel<? extends RichTextView> model) {
 		this.model = model;
 		revalidate();
 		repaint();
-	}
-
-	public Model getModel() {
-		return model;
 	}
 
 	private String addAction(Action action) {
@@ -382,493 +326,10 @@ public class RichTextView extends JComponent implements Scrollable {
 		}
 	}
 
-	public abstract class Block<B extends RowViewer.Block> {
-		protected final Point2D.Float position = new Point2D.Float(); 
-		protected boolean opaque;
-		private Color color = Color.BLACK;
-		private Color background = Color.WHITE;
 
-		public B color(int r, int g, int b) {
-			return color(new Color(r, g, b));
-		}
+	static final Pattern TAB_PATTERN = Pattern.compile("\t", Pattern.LITERAL);
 
-		public B background(int r, int g, int b) {
-			return background(new Color(r, g, b));
-		}
 
-		public B color(final Color c) {
-			color = c;
-			return self();
-		}
-
-		public B background(final Color c) {
-			background = c;
-			return self();
-		}
-
-		public Link linkTo(Block anchor) {
-			return new Link(this, anchor);
-		}
-
-		@SuppressWarnings("unchecked")
-		protected B self() { return (B) this; }
-
-		protected Color background(boolean selected) {
-			return selected ? UIManager.getDefaults().getColor("TextArea.selectionBackground") : background;
-		}
-
-		protected Color color(boolean selected) {
-			return selected ? color : color;
-		}
-		
-		protected B position(float x, float y) {
-			position.x = x;
-			position.y = y;
-			return self();
-		}
-
-		protected void draw(Graphics2D g) {
-			final float h = height();
-			final float w = width();
-			final boolean selected;
-			if(endBlock != null && startBlock != null) {
-				// Only line selection is supported
-				selected = (startBlock.position.y <= position.y && position.y <= endBlock.position.y)
-						|| (endBlock.position.y <= position.y && position.y <= startBlock.position.y);
-			} else {
-				selected =false;
-			}
-					
-			if (opaque || selected) {
-				g.setColor(background(selected));
-				g.fill(new Rectangle2D.Float(position.x, position.y, w, h));
-			}
-			g.setColor(color(selected));
-		}
-		
-		protected RowViewer.Block blockAt(float x) {
-			return position.x <= x && x <= position.x + width() ? this : null;
-		}
-
-		abstract float height();
-		abstract float width();
-
-		@Override
-		public String toString() {
-			return "";
-		}
-		
-		abstract void visit(BlockVisitor visitor);
-	}
-
-
-	public abstract class Container<T extends Container> extends Block<T> {
-		protected final Block block;
-
-		protected Container(Block block) {
-			this.block = block;
-		}
-
-		@Override
-		protected void draw(Graphics2D g) {
-			super.draw(g);
-			block.draw(g);
-		}
-
-		@Override
-		float height() {
-			return block.height();
-		}
-
-		@Override
-		float width() {
-			return block.width();
-		}
-
-		@Override
-		protected T position(float x, float y) {
-			block.position(x, y);
-			return super.position(x, y);
-		}
-
-		@Override
-		public T color(Color c) {
-			block.color(c);
-			return super.color(c);
-		}
-
-		@Override
-		public T background(Color c) {
-			block.background(c);
-			return super.background(c);
-		}
-
-		@Override
-		protected Block blockAt(float x) {
-			return block.blockAt(x);
-		}
-
-		@Override
-		public String toString() {
-			return block.toString();
-		}
-	}
-
-	public class Strip extends Block<RowViewer.Strip> {
-		private List<Block> blocks = new ArrayList<>();
-		private float lpad = 0;
-
-		Strip() {
-			opaque = true;
-		}
-
-		RowViewer.Strip add(Block... values) {
-			blocks.addAll(Arrays.asList(values));
-			return this;
-		}
-
-		@Override
-		float height() {
-			float height = 0;
-			for (Block block : blocks) {
-				height = max(height, block.height());
-			}
-			return height;
-		}
-
-		@Override
-		protected void draw(Graphics2D g) {
-			super.draw(g);
-			final Rectangle clipBounds = g.getClipBounds();
-			for (Block block : blocks) {
-				if(block.position.x > clipBounds.x+clipBounds.width) break;
-				block.draw(g);
-			}
-		}
-
-		@Override
-		float width() {
-			float width = lpad;
-			for (Block block : blocks) {
-				width += block.width();
-			}
-			return width;
-		}
-		
-		RowViewer.Strip lpad(final float lpad) {
-			this.lpad = lpad;
-			return this;
-		}
-
-		@Override
-		protected RowViewer.Strip position(float x, float y) {
-			super.position(x, y);
-			float xoff = x + lpad;
-			for (Block block : blocks) {
-				block.position(xoff, y);
-				xoff += block.width();
-			}
-			return this;
-		}
-
-		@Override
-		protected Block blockAt(float x) {
-			int index = Collections.binarySearch(blocks, x, RichTextView.X_COMPARATOR);
-			if(index < 0) {
-				index = -index-1;
-			}
-			
-			// Correct index, we look at the base x position, so we're shifted
-			index -= 1;
-			return index == -1 ? super.blockAt(x) : blocks.get(index).blockAt(x);
-		}
-
-		@Override
-		void visit(BlockVisitor visitor) { visitor.visit(this); }
-
-		@Override
-		public String toString() {
-			final StringBuilder sb = new StringBuilder();
-			for (int i = 0; i < blocks.size(); i++) {
-				Block block = blocks.get(i);
-				sb.append(block);
-			}
-			return sb.toString(); 
-		}
-
-		public List<Block> blocks() {
-			return blocks;
-		}
-	}
-
-	private static final Pattern TAB_PATTERN = Pattern.compile("\t", Pattern.LITERAL);
-	public class Text extends Block<RowViewer.Text> {
-		private String text;
-		private float vgap = 5;
-		private float hgap = 5;
-		
-		private boolean bold;
-		private boolean monospaced;
-		private boolean italic;
-		private boolean underline;
-		private int size = 12;
-
-		Text(String text) {
-			text(text);
-		}
-
-		public void text(String text) {
-			// Quick & Dirty fix for tabs
-			this.text = TAB_PATTERN.matcher(text).replaceAll("    ");
-		}
-
-		public String text() {
-			return this.text;
-		}
-
-		public RowViewer.Text monospaced() {
-			return monospaced(true);
-		}
-
-		public RowViewer.Text monospaced(final boolean monospaced) {
-			this.monospaced = monospaced;
-			return this;
-		}
-
-		public RowViewer.Text bold() {
-			return bold(true);
-		}
-
-		public RowViewer.Text bold(final boolean v) {
-			this.bold = v;
-			return this;
-		}
-
-		public RowViewer.Text size(final int size) {
-			this.size = size;
-			return this;
-		}
-
-		public int size() {
-			return size;
-		}
-
-		public RowViewer.Text italic() {
-			return italic(true);
-		}
-
-		public RowViewer.Text italic(final boolean v) {
-			italic = v;
-			return this;
-		}
-
-		public RowViewer.Text underline() {
-			return underline(true);
-		}
-
-		public RowViewer.Text underline(final boolean v) {
-			underline = v;
-			return this;
-		}
-
-		public RowViewer.Text hgap(float hgap) {
-			this.hgap = hgap;
-			return this;
-		}
-
-		private FontMetrics fontMetrics() {
-			return RichTextView.this.fontMetrics(monospaced, bold, italic, underline, size);
-		}
-
-		private Font font() {
-			return RichTextView.this.font(monospaced, bold, italic, underline, size);
-		}
-
-		@Override
-		float height() {
-			return fontMetrics().getHeight() + vgap;
-		}
-
-		@Override
-		protected void draw(Graphics2D g) {
-			super.draw(g);
-			g.setFont(font());
-			final int ascent = fontMetrics().getAscent();
-			g.drawString(text, position.x+hgap/2 , position.y + vgap/2 + ascent);
-		}
-
-		@Override
-		float width() {
-			return fontMetrics().stringWidth(text) + hgap;
-		}
-
-		public RowViewer.Text vgap(final float vgap) {
-			this.vgap = vgap;
-			return this;
-		}
-
-		public float vgap() {
-			return vgap;
-		}
-
-		@Override
-		void visit(BlockVisitor visitor) { visitor.visit(this); }
-
-		@Override
-		public String toString() {
-			return hgap == 0?text : " " + text;
-		}
-
-		public boolean isMonospaced() {
-			return monospaced;
-		}
-
-		public boolean isBold() {
-			return bold;
-		}
-
-		public boolean isItalic() {
-			return italic;
-		}
-
-		public boolean isUnderline() {
-			return underline;
-		}
-
-		public float hgap() {
-			return hgap;
-		}
-	}
-
-	public class HBox extends Container<RowViewer.HBox> {
-		private RichTextView.Align align = RichTextView.Align.LEFT;
-		private float width;
-
-		HBox(Block block, float width) {
-			super(block);
-			this.width = width;
-			opaque = true;
-		}
-
-		public RowViewer.HBox right() {
-			align = RichTextView.Align.RIGHT;
-			return this;
-		}
-
-		public RowViewer.HBox left() {
-			align = RichTextView.Align.LEFT;
-			return this;
-		}
-
-		public RowViewer.HBox center() {
-			align = RichTextView.Align.CENTER;
-			return this;
-		}
-		
-		@Override
-		protected RowViewer.HBox position(float x, float y) {
-			super.position(x, y);
-			final float blockWidth = block.width();
-			float xoff = 0;
-			if(width > blockWidth) {
-				switch (align) {
-					case CENTER:
-						xoff = (width - blockWidth)/2;
-						break;
-					case RIGHT:
-						xoff = (width - blockWidth);
-						break;
-				}
-			}
-			block.position(x + xoff, y);
-			return this;
-		}
-
-		@Override
-		float width() {
-			return width;
-		}
-
-		@Override
-		void visit(BlockVisitor visitor) { visitor.visit(this); }
-
-		public Align align() {
-			return align;
-		}
-	}
-
-	public class Link extends Container<Link> {
-		private final Block anchor;
-
-		protected Link(final Block block, final Block anchor) {
-			super(block);
-			this.anchor = anchor;
-		}
-
-		@Override
-		protected Block blockAt(float x) {
-			final Block block = super.blockAt(x);
-			return block != null ? this : null;
-		}
-
-		@Override
-		void visit(BlockVisitor visitor) { visitor.visit(this); }
-	}
-
-
-	public class HRuler extends Block<RowViewer.HRuler> {
-
-		private final float height = 10;
-		private final float width;
-		private final float hpad = 50;
-
-		HRuler(float width) {
-			this.width = width;
-		}
-
-		@Override
-		protected void draw(Graphics2D g) {
-			super.draw(g);
-			g.draw(new Line2D.Float(position.x + hpad/2,position.y, position.x+ width() - hpad/2, position.y));
-		}
-
-		@Override
-		float height() {
-			return height;
-		}
-
-		@Override
-		float width() {
-			return width;
-		}
-
-		@Override
-		void visit(BlockVisitor visitor) { visitor.visit(this); }
-	}
-
-	public class Gap extends Block<Block> {
-		private final int gap;
-
-		public Gap(int gap) {
-			this.gap = gap;
-		}
-
-		@Override
-		float height() {
-			return 0;
-		}
-
-		@Override
-		float width() {
-			return gap;
-		}
-
-		@Override
-		void visit(BlockVisitor visitor) { visitor.visit(this); }
-	}
-
-	enum Align { LEFT, CENTER, RIGHT }
-	
 	private static final RichTextView.MappedComparator Y_COMPARATOR = new RichTextView.MappedComparator() {
 		@Override
 		protected float toFloat(Block block) {
@@ -876,7 +337,7 @@ public class RichTextView extends JComponent implements Scrollable {
 		}
 	};
 
-	private static final MappedComparator X_COMPARATOR = new MappedComparator() {
+	static final MappedComparator X_COMPARATOR = new MappedComparator() {
 		@Override
 		protected float toFloat(Block block) {
 			return block.position.x;
@@ -898,7 +359,7 @@ public class RichTextView extends JComponent implements Scrollable {
 	}
 
 	private Map<Integer, Font> fontCache = new HashMap<>(); 
-	private Font font(boolean monospaced, boolean bold, boolean italic, boolean underline, int size) {
+	Font font(boolean monospaced, boolean bold, boolean italic, boolean underline, int size) {
 		final int key = (monospaced?1<<30:0)
 				      | (bold      ?1<<29:0)
 				      | (italic    ?1<<28:0)
@@ -923,7 +384,7 @@ public class RichTextView extends JComponent implements Scrollable {
 	}
 
 	private Map<Font, FontMetrics> fontMetricsCache = new HashMap<>();
-	private FontMetrics fontMetrics(boolean monospaced, boolean bold, boolean italic, boolean underline, int size) {
+	FontMetrics fontMetrics(boolean monospaced, boolean bold, boolean italic, boolean underline, int size) {
 		final Font font = font(monospaced, bold, italic, underline, size);
 		FontMetrics fontMetrics = fontMetricsCache.get(font);
 		if(fontMetrics == null) {

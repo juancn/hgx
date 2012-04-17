@@ -3,7 +3,11 @@
 #Arcane incantation to get the bin directory (even if we were called through a symlink)
 BIN_DIR=$(dirname $(file="$0"; while [ -L $file ]; do file=$(readlink "$file"); done; echo $file))
 JAR_FILE="$BIN_DIR/../target/hgx-1.0-SNAPSHOT.jar"
-
-java $HGX_JAVA_OPTIONS -cp $JAR_FILE -ea codng.hgx.ui.DiffFrame $@
+if [ -z "$HGX_JAVA" ]; then
+	JAVA=java
+else
+	JAVA="$HGX_JAVA"
+fi
+"$JAVA" $HGX_JAVA_OPTIONS -cp $JAR_FILE -ea codng.hgx.ui.DiffFrame $@
 
 

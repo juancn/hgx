@@ -1,13 +1,13 @@
 package codng.hgx.ui;
 
-import codng.hgx.ui.RichTextView.Block;
-import codng.hgx.ui.RichTextView.BlockVisitor;
-import codng.hgx.ui.RichTextView.Gap;
-import codng.hgx.ui.RichTextView.HBox;
-import codng.hgx.ui.RichTextView.HRuler;
-import codng.hgx.ui.RichTextView.Link;
-import codng.hgx.ui.RichTextView.Strip;
-import codng.hgx.ui.RichTextView.Text;
+import codng.hgx.ui.rtext.Block;
+import codng.hgx.ui.rtext.RichTextView.BlockVisitor;
+import codng.hgx.ui.rtext.Gap;
+import codng.hgx.ui.rtext.HBox;
+import codng.hgx.ui.rtext.HRuler;
+import codng.hgx.ui.rtext.Link;
+import codng.hgx.ui.rtext.Strip;
+import codng.hgx.ui.rtext.Text;
 
 import java.awt.Color;
 import java.io.PrintWriter;
@@ -31,8 +31,8 @@ public class HtmlTransform
 	@Override
 	public void visit(Text text) {
 		pw.print("<span style=\"");
-		if(!text.color(false).equals(Color.BLACK)) pw.printf("color:%s;", rgb(text.color(false)));
-		if(!text.background(false).equals(Color.WHITE)) pw.printf("background-color:%s;", rgb(text.background(false)));
+		if(!text.getForegroundColor().equals(Color.BLACK)) pw.printf("color:%s;", rgb(text.getForegroundColor()));
+		if(!text.getBackgroundColor(false).equals(Color.WHITE)) pw.printf("background-color:%s;", rgb(text.getBackgroundColor(false)));
 		if(text.isItalic()) pw.print("font-style:italic;");
 		if(text.isBold()) pw.print("font-weight:bold;");
 		if(text.isMonospaced()) pw.print("font-family:monaco,courier;");
@@ -61,8 +61,8 @@ public class HtmlTransform
 	@Override
 	public void visit(Strip strip) {
 
-		boolean hasBackground = !strip.background(false).equals(Color.WHITE);
-		if(hasBackground) pw.printf("<span style=\"background-color:%s;\"", rgb(strip.background(false)));
+		boolean hasBackground = !strip.getBackgroundColor(false).equals(Color.WHITE);
+		if(hasBackground) pw.printf("<span style=\"background-color:%s;\"", rgb(strip.getBackgroundColor(false)));
 		for (Block block : strip.blocks()) {
 			block.visit(this);
 		}
@@ -72,7 +72,7 @@ public class HtmlTransform
 	@Override
 	public void visit(HBox hBox) {
 		pw.printf("<div style=\"display:inline-block; width:%.0fpx; text-align:%s; background-color:%s;\" >",
-				hBox.width(), hBox.align().toString().toLowerCase(), rgb(hBox.background(false)));
+				hBox.width(), hBox.align().toString().toLowerCase(), rgb(hBox.getBackgroundColor(false)));
 		hBox.block.visit(this);
 		pw.print("</div>");
 	}

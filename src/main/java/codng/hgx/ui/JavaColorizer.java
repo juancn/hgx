@@ -1,14 +1,15 @@
 package codng.hgx.ui;
 
-import codng.hgx.ui.RichTextView.Model;
-import codng.hgx.ui.RichTextView.Text;
+import codng.hgx.ui.rtext.RichTextViewModel;
+import codng.hgx.ui.rtext.Text;
+import codng.hgx.ui.rtext.Strip;
 
 import java.text.ParseException;
 
 class JavaColorizer extends Colorizer {
 
 	private boolean unterminatedComment;
-	JavaColorizer(final Model model) {
+	JavaColorizer(final RichTextViewModel model) {
 		super(model);
 	}
 
@@ -18,8 +19,8 @@ class JavaColorizer extends Colorizer {
 	}
 
 	@Override
-	public RowViewer.Strip colorizeLine(String line) {
-		final RowViewer.Strip strip = strip();
+	public Strip colorizeLine(String line) {
+		final Strip strip = strip();
 		try {
 			if(unterminatedComment) {
 				final int terminator = line.indexOf("*/");
@@ -43,7 +44,7 @@ class JavaColorizer extends Colorizer {
 					strip.add(plain(line.substring(last.getEndOffset(), current.getStartOffset())));
 				}
 
-				final RowViewer.Text token;
+				final Text token;
 				final CharSequence text = current.getText();
 				final TokenType tokenType = current.getType();
 
@@ -102,11 +103,11 @@ class JavaColorizer extends Colorizer {
 		return TextStyle.COMMENT.applyTo(gapless(line));
 	}
 
-	private RowViewer.Text gapless(CharSequence text) {
+	private Text gapless(CharSequence text) {
 		return model.text(text.toString()).hgap(0);
 	}
 
-	private RowViewer.Strip strip() {
+	private Strip strip() {
 		return model.strip();
 	}
 }

@@ -1,6 +1,6 @@
 package codng.hgx.ui;
 
-import codng.hgx.ui.RichTextView.Text;
+import codng.hgx.ui.rtext.Text;
 
 import java.awt.Color;
 

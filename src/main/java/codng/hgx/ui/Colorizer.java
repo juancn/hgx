@@ -1,21 +1,22 @@
 package codng.hgx.ui;
 
-import codng.hgx.ui.RichTextView.Model;
+import codng.hgx.ui.rtext.RichTextViewModel;
+import codng.hgx.ui.rtext.Strip;
 
 abstract class Colorizer {
-	protected final Model model;
+	protected final RichTextViewModel model;
 
-	protected Colorizer(final Model model) {
+	protected Colorizer(final RichTextViewModel model) {
 		this.model = model;
 	}
 
-	public abstract RichTextView.Strip colorizeLine(String line);
+	public abstract Strip colorizeLine(String line);
 	
-	public static final Colorizer plain(Model model) {
+	public static final Colorizer plain(RichTextViewModel model) {
 		return new Colorizer(model) {
 			@Override
-			public RichTextView.Strip colorizeLine(final String line) {
-				final RichTextView.Strip strip = model.strip();
+			public Strip colorizeLine(final String line) {
+				final Strip strip = model.strip();
 				String chopped = line;
 				
 				if(chopped.length() > MAX_LINE_LENGTH) {

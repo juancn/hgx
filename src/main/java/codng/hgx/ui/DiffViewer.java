@@ -1,5 +1,11 @@
 package codng.hgx.ui;
 
+import codng.hgx.ui.rtext.Block;
+import codng.hgx.ui.rtext.HBox;
+import codng.hgx.ui.rtext.RichTextView;
+import codng.hgx.ui.rtext.RichTextViewModel;
+import codng.hgx.ui.rtext.Strip;
+import codng.hgx.ui.rtext.Text;
 import codng.util.DefaultPredicate;
 import codng.util.Predicate;
 
@@ -47,7 +53,7 @@ public abstract class DiffViewer<T>
 				@Override
 				public void run() {
 					Thread.currentThread().setPriority(Thread.MIN_PRIORITY);
-					final DiffModel diffModel = createModel();
+					final DiffModel<T> diffModel = createModel();
 					diffModel.addHeader(this.data);
 					diffModel.addDiff(this.data, new DefaultPredicate<String>() {
 						@Override
@@ -81,7 +87,7 @@ public abstract class DiffViewer<T>
 	}
 
 	private Text loading() {
-		final DiffModel diffModel = createModel();
+		final DiffModel<T> diffModel = createModel();
 		diffModel.addHeader(data);
 		final Text loading = diffModel.text("Loading...").color(Colors.LOADING).bold().size(14);
 		diffModel.line().add(loading);
@@ -89,17 +95,21 @@ public abstract class DiffViewer<T>
 		return loading;
 	}
 
-	protected DiffModel createModel() {
-		return new DiffModel();
+	protected DiffModel<T> createModel() {
+		return new DiffModel<>(this);
 	}
 	protected abstract BufferedReader loadDiff(T data) throws IOException, InterruptedException;
 
-	private boolean interrupted() {
+	boolean interrupted() {
 		return Thread.currentThread().isInterrupted();
 	}
 
-	public class DiffModel extends Model {
+	public static class DiffModel<T> extends RichTextViewModel<DiffViewer<T>> {
 		private int fileIndex;
+
+		public DiffModel(DiffViewer<T> richTextView) {
+			super(richTextView);
+		}
 
 		protected void addHeader(final T data) {
 			fileIndex = lines.size();
@@ -113,7 +123,7 @@ public abstract class DiffViewer<T>
 				boolean skipDiff = false;
 				Colorizer colorizer = Colorizer.plain(this);
 				int lineCount = 0;
-				for(String line = br.readLine(); line != null && !interrupted(); line = br.readLine())  {
+				for(String line = br.readLine(); line != null && !richTextView.interrupted(); line = br.readLine())  {
 					++lineCount;
 					// Pick a nice prime so numbers are not all round
 					if(lineCount > 0 && lineCount % 1009 == 0) {
@@ -125,7 +135,7 @@ public abstract class DiffViewer<T>
 						if (matcher.matches()) {
 							final String file = matcher.group(2);
 
-							final Strip fileLine = line().add(align(text(file).vgap(10).bold(), getParent().getWidth() - 50).background(Colors.FILE_BG));
+							final Strip fileLine = line().add(align(text(file).vgap(10).bold(), richTextView.getParent().getWidth() - 50).background(Colors.FILE_BG));
 							addFileHeader(lineCount, file, fileLine);
 
 							if(file.endsWith(".java")) {
@@ -226,7 +236,7 @@ public abstract class DiffViewer<T>
 
 		private void addDiff(final T data, final Predicate<String> status) {
 			try {
-				colorize(loadDiff(data), status);
+				colorize(richTextView.loadDiff(data), status);
 			} catch (IOException | InterruptedException | RuntimeException e) {
 				e.printStackTrace();
 			}

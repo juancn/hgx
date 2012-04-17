@@ -18,8 +18,8 @@ public class RowViewer
 	}
 
 	@Override
-	protected DiffModel createModel() {
-		return new RowModel();
+	protected RowModel createModel() {
+		return new RowModel(this);
 	}
 
 	@Override
@@ -27,7 +27,12 @@ public class RowViewer
 		return Cache.loadDiff(data);
 	}
 
-	private class RowModel extends DiffModel {
+	private static class RowModel extends DiffModel<Row> {
+
+		public RowModel(DiffViewer<Row> richTextView) {
+			super(richTextView);
+		}
+
 		protected void addHeader(final Row row) {
 			final ChangeSet changeSet = row.changeSet;
 			header("SHA:", changeSet.id);
@@ -40,7 +45,4 @@ public class RowViewer
 			super.addHeader(row);
 		}
 	}
-
-	// Javac bug
-	public void access$300() {}
 }

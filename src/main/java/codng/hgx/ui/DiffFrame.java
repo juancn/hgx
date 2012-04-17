@@ -45,9 +45,6 @@ public class DiffFrame
 			protected BufferedReader loadDiff(String data) throws IOException, InterruptedException {
 				return new BufferedReader(new StringReader(data));
 			}
-
-			// Javac bug
-			public void access$300() {}
 		};
 		getContentPane().add(new JScrollPane(detail));
 	}
