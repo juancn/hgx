@@ -1,4 +1,4 @@
-package codng.hgx.ui;
+package codng.hgx.ui.rtext;
 
 import codng.hgx.ui.rtext.Block;
 import codng.hgx.ui.rtext.RichTextView.BlockVisitor;

@@ -20,6 +20,11 @@ import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+/**
+ * RichTextView that knows how to colorize a git-style diff.
+ * This component delay loads the diff and processes the coloring in a background thread.
+ * @param <T> type of diff source data.
+ */
 public abstract class DiffViewer<T>
 		extends RichTextView {
 

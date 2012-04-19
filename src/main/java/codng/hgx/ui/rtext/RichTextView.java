@@ -1,6 +1,6 @@
 package codng.hgx.ui.rtext;
 
-import codng.hgx.ui.HtmlTransform;
+import codng.hgx.ui.rtext.HtmlTransform;
 import codng.util.Tuple;
 
 import javax.swing.Action;
@@ -38,6 +38,11 @@ import java.util.regex.Pattern;
 
 import static java.lang.Math.max;
 
+/**
+ * JComponent that renders colorized text.
+ * This component can render huge amounts of text very quickly.
+ * Supports line selection and plain text and HTML copying.
+ */
 public class RichTextView extends JComponent implements Scrollable {
 	private RichTextViewModel<? extends RichTextView> model = new RichTextViewModel<>(this);
 	protected Block startBlock;

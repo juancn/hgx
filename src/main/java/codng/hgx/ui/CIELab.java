@@ -4,6 +4,10 @@ import java.awt.color.ColorSpace;
 
 public class CIELab extends ColorSpace {
 
+	private CIELab() {
+		super(ColorSpace.TYPE_Lab, 3);
+	}
+
 	public static CIELab getInstance() {
 		return Holder.INSTANCE;
 	}
@@ -51,10 +55,6 @@ public class CIELab extends ColorSpace {
 	public float[] toRGB(float[] colorvalue) {
 		float[] xyz = toCIEXYZ(colorvalue);
 		return CIEXYZ.toRGB(xyz);
-	}
-
-	CIELab() {
-		super(ColorSpace.TYPE_Lab, 3);
 	}
 
 	private static double f(double x) {
