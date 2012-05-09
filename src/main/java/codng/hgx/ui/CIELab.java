@@ -56,7 +56,11 @@ public class CIELab extends ColorSpace {
 		return xyzToRGB(toCIEXYZ(colorvalue));
 	}
 
-	private float[] xyzToRGB(float[] xyz) {
+	/**
+	 * Workaround for http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=7167647
+	 * CIEXYZ toRGB() leaks posix semaphores.
+	 */
+	private static float[] xyzToRGB(float[] xyz) {
 		float rl =  3.2406f*xyz[0] - 1.5372f*xyz[1] - 0.4986f*xyz[2];
 		float gl = -0.9689f*xyz[0] + 1.8758f*xyz[1] + 0.0415f*xyz[2];
 		float bl =  0.0557f*xyz[0] - 0.2040f*xyz[1] + 1.0570f*xyz[2];
