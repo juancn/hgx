@@ -53,8 +53,23 @@ public class CIELab extends ColorSpace {
 
 	@Override
 	public float[] toRGB(float[] colorvalue) {
-		float[] xyz = toCIEXYZ(colorvalue);
-		return CIEXYZ.toRGB(xyz);
+		return xyzToRGB(toCIEXYZ(colorvalue));
+	}
+
+	private float[] xyzToRGB(float[] xyz) {
+		float rl =  3.2406f*xyz[0] - 1.5372f*xyz[1] - 0.4986f*xyz[2];
+		float gl = -0.9689f*xyz[0] + 1.8758f*xyz[1] + 0.0415f*xyz[2];
+		float bl =  0.0557f*xyz[0] - 0.2040f*xyz[1] + 1.0570f*xyz[2];
+		return new float[] { linearTosRGB(rl), linearTosRGB(gl), linearTosRGB(bl)};
+	}
+
+	private static float linearTosRGB(float c) {
+		final float a = 0.055f;
+		return clamp(c <= 0.0031308 ? 12.92f*c : (1 + a )*(float)Math.pow(c, 1/2.4f)- a);
+	}
+
+	private static float clamp(float v) {
+		return v < 0 ? 0 : v > 1 ? 1 : v;
 	}
 
 	private static double f(double x) {
