@@ -9,8 +9,6 @@ import java.util.Set;
  * @param <T> element type
  */
 public abstract class DefaultSequence<T> implements Sequence<T> {
-	protected static final int TO_STRING_LIMIT = 1000;
-
 	@Override
 	public <Y> Sequence<Y> map(final Function<T, Y> mapper) {
 		return Sequences.map(this, mapper);
@@ -33,7 +31,7 @@ public abstract class DefaultSequence<T> implements Sequence<T> {
 
 	@Override
 	public Set<T> toSet() {
-		return Sequences.asSet(this);
+		return Sequences.toSet(this);
 	}
 
 	@Override

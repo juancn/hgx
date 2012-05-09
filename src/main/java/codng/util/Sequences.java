@@ -141,7 +141,7 @@ public class Sequences {
 	 * @param ts an iterable
 	 * @return a copy of the iterable as a set.
 	 */
-	public static <T> Set<T> asSet(final Iterable<T> ts) {
+	public static <T> Set<T> toSet(final Iterable<T> ts) {
 		final HashSet<T> list = new HashSet<>();
 		for (T t : ts) list.add(t);
 		return list;
