@@ -202,22 +202,23 @@ public class ChangeSet
 	}
 
 	public static List<ChangeSet> loadFrom(InputStream is) throws IOException, ParseException {
-		final BufferedReader br = new BufferedReader(new InputStreamReader(is));
-		final List<ChangeSet> changeSets = new ArrayList<>();
-		final List<Entry> entries = new ArrayList<>();
-		for(String line = br.readLine();
-			line != null;
-			line = br.readLine()) {
-			if(line.trim().isEmpty()) {
-				// End of section
-				changeSets.add(ChangeSet.parse(entries));
-				entries.clear();
-			} else {
-				entries.add(Entry.parse(line));
+		try(final BufferedReader br = new BufferedReader(new InputStreamReader(is))) {
+			final List<ChangeSet> changeSets = new ArrayList<>();
+			final List<Entry> entries = new ArrayList<>();
+			for(String line = br.readLine();
+				line != null;
+				line = br.readLine()) {
+				if(line.trim().isEmpty()) {
+					// End of section
+					changeSets.add(ChangeSet.parse(entries));
+					entries.clear();
+				} else {
+					entries.add(Entry.parse(line));
+				}
 			}
-		}
 
-		return changeSets;
+			return changeSets;
+		}
 	}
 
 

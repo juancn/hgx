@@ -137,6 +137,7 @@ public class Cache {
 		final OutputStreamWriter out = new OutputStreamWriter(new BufferedOutputStream(fos), "UTF-8");
 		transfer(new InputStreamReader(inputStream, "UTF-8"), out);
 		out.close();
+		inputStream.close();
 		temp.renameTo(file);
 	}
 
