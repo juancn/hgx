@@ -170,7 +170,7 @@ public abstract class DiffViewer<T>
 						// Don't care
 					} else if(line.startsWith("@@")) {
 						final Matcher matcher = HUNK_PATTERN.matcher(line);
-						if(!matcher.matches()) throw new IllegalArgumentException("Malformed diff");
+						if(!matcher.matches()) throw new IllegalArgumentException("Malformed diff: " + line);
 						oldStart = Integer.parseInt(matcher.group(1));
 						newStart = Integer.parseInt(matcher.group(3));
 						line().add(deemphasize(line));
@@ -249,5 +249,5 @@ public abstract class DiffViewer<T>
 	}
 
 	private static Pattern DIFF_PATTERN = Pattern.compile("diff --git a/(.*) b/(.*)");
-	private static Pattern HUNK_PATTERN = Pattern.compile("@@ -(\\d+),(\\d+) \\+(\\d+),(\\d+) @@");
+	private static Pattern HUNK_PATTERN = Pattern.compile("@@ -(\\d+),(\\d+) \\+(\\d+),(\\d+) @@.*");
 }

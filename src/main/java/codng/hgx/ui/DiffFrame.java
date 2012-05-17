@@ -1,5 +1,6 @@
 package codng.hgx.ui;
 
+import codng.hgx.Cache;
 import codng.util.Command;
 
 import javax.swing.JFrame;
@@ -14,6 +15,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
+import java.io.StringWriter;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -104,11 +106,19 @@ public class DiffFrame
 	}
 
 	public static void main(String[] args) throws Exception {
-		final ArrayList<String> arguments = new ArrayList<>();
-		arguments.add("diff");
-		arguments.add("--git");
-		arguments.addAll(Arrays.asList(args));
-		final DiffFrame historyFrame = new DiffFrame("", Command.executeSimple(new File("."), "hg", arguments));
+		final String diff;
+		if (args.length > 0 && "--stdin".equals(args[0])) {
+			final StringWriter sw = new StringWriter();
+			Cache.transfer(Cache.readText(System.in), sw);
+			diff = sw.toString();
+		} else {
+			final ArrayList<String> arguments = new ArrayList<>();
+			arguments.add("diff");
+			arguments.add("--git");
+			arguments.addAll(Arrays.asList(args));
+			diff = Command.executeSimple(new File("."), "hg", arguments);
+		}
+		final DiffFrame historyFrame = new DiffFrame("", diff);
 		historyFrame.doShow();
 	}
 

@@ -18,6 +18,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Reader;
+import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -156,7 +157,11 @@ public class Cache {
 	}
 
 	public static BufferedReader readText(File file) throws IOException {
-		final BufferedInputStream inputStream = new BufferedInputStream(new FileInputStream(file));
+		return readText(new FileInputStream(file));
+	}
+
+	public static BufferedReader readText(InputStream in) throws UnsupportedEncodingException {
+		final BufferedInputStream inputStream = new BufferedInputStream(in);
 		return new BufferedReader(new InputStreamReader(inputStream, "UTF-8"));
 	}
 
