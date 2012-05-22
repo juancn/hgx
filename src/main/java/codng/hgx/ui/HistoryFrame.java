@@ -3,6 +3,7 @@ package codng.hgx.ui;
 import codng.hgx.Cache;
 import codng.hgx.ChangeSet;
 import codng.hgx.Hg;
+import codng.hgx.Id;
 import codng.hgx.Row;
 
 import javax.swing.JFrame;
@@ -49,7 +50,14 @@ public class HistoryFrame
 		JScrollPane tableScrollPane = new JScrollPane(historyTable);
 
 
-		detail = new RowViewer();
+		detail = new RowViewer() {
+			@Override protected void onClick(Id id) {
+				int row = 0;
+				while(!id.equals(historyTableModel.getValueAt(row, 3))) ++row;
+				historyTable.scrollRectToVisible(historyTable.getCellRect(row, 0, false));
+				historyTable.getSelectionModel().setSelectionInterval(row, row);
+			}
+		};
 		
 		split = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
 		split.setTopComponent(tableScrollPane);

@@ -27,7 +27,7 @@ public class RichTextViewModel<V extends RichTextView> {
 		lines.add(strip().add(new HRuler(richTextView, richTextView.getParent().getWidth())));
 	}
 
-	protected void header(String label, Text value) {
+	protected void header(String label, Block value) {
 		lines.add(strip().add(align(TextStyle.LABEL.applyTo(text(label)), 100).right(), value));
 	}
 

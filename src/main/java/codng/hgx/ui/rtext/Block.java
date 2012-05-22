@@ -5,6 +5,7 @@ import codng.hgx.ui.rtext.RichTextView.BlockVisitor;
 import javax.swing.UIManager;
 import java.awt.Color;
 import java.awt.Graphics2D;
+import java.awt.Rectangle;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 
@@ -91,4 +92,12 @@ public abstract class Block<B extends Block> {
 	}
 
 	public abstract void visit(BlockVisitor visitor);
+
+	public void scrollToVisible() {
+		richTextView.scrollRectToVisible(new Rectangle(
+				(int) position.x,
+				(int) position.y,
+				richTextView.getWidth(),
+				richTextView.getHeight()));
+	}
 }

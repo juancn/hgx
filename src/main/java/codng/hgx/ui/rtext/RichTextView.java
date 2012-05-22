@@ -85,11 +85,7 @@ public class RichTextView extends JComponent implements Scrollable {
 						final Link link = (Link) block;
 						clearSelection();
 						normalCursor();
-						scrollRectToVisible(new Rectangle(
-								(int) link.anchor.position.x,
-								(int) link.anchor.position.y,
-								getWidth(),
-								getHeight()));
+						link.onClick();
 					}
 				}
 			}

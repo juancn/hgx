@@ -3,9 +3,9 @@ package codng.hgx.ui.rtext;
 import codng.hgx.ui.rtext.RichTextView.BlockVisitor;
 
 public class Link extends Container<Link> {
-	final Block anchor;
+	private final Block anchor;
 
-	Link(final Block block, final Block anchor) {
+	public Link(final Block block, final Block anchor) {
 		super(block);
 		this.anchor = anchor;
 	}
@@ -18,4 +18,8 @@ public class Link extends Container<Link> {
 
 	@Override
 	public void visit(BlockVisitor visitor) { visitor.visit(this); }
+
+	public void onClick() {
+		anchor.scrollToVisible();
+	}
 }

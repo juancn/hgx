@@ -1,11 +1,14 @@
 package codng.hgx.ui.rtext;
 
 import codng.hgx.ui.rtext.RichTextView.BlockVisitor;
+import codng.util.Sequence;
+import codng.util.Sequences;
 
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
@@ -22,6 +25,11 @@ public class Strip extends Block<Strip> {
 
 	public Strip add(Block... values) {
 		blocks.addAll(Arrays.asList(values));
+		return this;
+	}
+
+	public Strip add(Sequence<Block> values) {
+		blocks.addAll(values.toList());
 		return this;
 	}
 
