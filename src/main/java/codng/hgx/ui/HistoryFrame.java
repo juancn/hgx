@@ -54,8 +54,8 @@ public class HistoryFrame
 			@Override protected void onClick(Id id) {
 				int row = 0;
 				while(!id.equals(historyTableModel.getValueAt(row, 3))) ++row;
-				historyTable.scrollRectToVisible(historyTable.getCellRect(row, 0, false));
 				historyTable.getSelectionModel().setSelectionInterval(row, row);
+				historyTable.scrollRectToVisible(historyTable.getCellRect(row, 0, false));
 			}
 		};
 		

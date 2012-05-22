@@ -3,12 +3,15 @@ package codng.hgx.ui;
 import codng.hgx.Id;
 import codng.hgx.Row;
 
+import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
 import javax.swing.table.TableModel;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 
 public class HistoryTableModel implements TableModel {
 	private final Iterator<Row> historyIt;
@@ -29,8 +32,13 @@ public class HistoryTableModel implements TableModel {
 	}
 
 	private void loadUpTo(int index) {
+		final int previous = history.size();
 		while (index >= history.size() && historyIt.hasNext()) {
 			history.add(historyIt.next());
+		}
+
+		if(index >= previous) {
+			fireSizeChanged(previous+1, index);
 		}
 	}
 
@@ -80,13 +88,22 @@ public class HistoryTableModel implements TableModel {
 		throw new UnsupportedOperationException();
 	}
 
+	private final Set<TableModelListener> listeners = new HashSet<>();
+
 	@Override
 	public void addTableModelListener(TableModelListener l) {
-		// Ignore for now
+		listeners.add(l);
 	}
 
 	@Override
 	public void removeTableModelListener(TableModelListener l) {
-		
+		listeners.remove(l);
+	}
+
+	private void fireSizeChanged(int first, int last) {
+		for (TableModelListener listener : listeners) {
+			listener.tableChanged(new TableModelEvent(this, first, last,
+					TableModelEvent.ALL_COLUMNS, TableModelEvent.INSERT));
+		}
 	}
 }
