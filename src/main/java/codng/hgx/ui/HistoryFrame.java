@@ -53,7 +53,7 @@ public class HistoryFrame
 		detail = new RowViewer() {
 			@Override protected void onClick(Id id) {
 				int row = 0;
-				while(!id.equals(historyTableModel.getValueAt(row, 3))) ++row;
+				while(row < historyTableModel.getRowCount() && !id.equals(historyTableModel.getValueAt(row, 3))) ++row;
 				historyTable.getSelectionModel().setSelectionInterval(row, row);
 				historyTable.scrollRectToVisible(historyTable.getCellRect(row, 0, false));
 			}
