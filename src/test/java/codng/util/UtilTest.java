@@ -31,6 +31,8 @@ public class UtilTest {
 		assertEquals("[1, 1, 1, 3, 1, 3]", integers.flatMap(TO_LIST).filter(EVEN.not()).toList().toString());
 		assertTrue(integers.toSet().containsAll(integers.toList()));
 		assertEquals("[5, 4, 3, 2, 1]", reverse(Arrays.asList(1,2,3,4,5)).toString());
+
+		assertEquals("[1, 2, 3, 4, 5, 1, 2, 3, 4, 5]", integers.concat(integers).toList().toString());
 	}
 
 	@Test
@@ -62,6 +64,31 @@ public class UtilTest {
 
 		assertFalse(Predicates.notNull().accepts(null));
 		assertTrue(Predicates.notNull().accepts(""));
+
+		assertTrue(Predicates.forAll(asSequence(1,2,3,4,5), Predicates.<Integer>alwaysTrue()));
+		assertTrue(Predicates.forAll(asSequence(1,2,3,4,5), new DefaultPredicate<Integer>() {
+			@Override
+			public boolean accepts(Integer integer) {
+				return integer > 0;
+			}
+		}));
+		assertFalse(Predicates.forAll(asSequence(1,2,3,4,5), Predicates.<Integer>alwaysFalse()));
+		assertFalse(Predicates.forAll(asSequence(1,2,3,4,5), new DefaultPredicate<Integer>() {
+			@Override
+			public boolean accepts(Integer integer) {
+				return integer > 2;
+			}
+		}));
+		assertTrue(Predicates.forAny(asSequence(1,2,3,4,5), Predicates.<Integer>alwaysTrue()));
+		assertTrue(Predicates.forAny(asSequence(1,2,3,4,5), new DefaultPredicate<Integer>() {
+			@Override
+			public boolean accepts(Integer integer) {
+				return integer > 2;
+			}
+		}));
+		assertFalse(Predicates.forAny(asSequence(1,2,3,4,5), Predicates.<Integer>alwaysFalse()));
+
+		assertEquals("[1, 2, 3]", asSequence(1,2,2,3,3,1,3,2).filter(Predicates.<Integer>onlyOnce()).toList().toString());
 	}
 
 	@Test

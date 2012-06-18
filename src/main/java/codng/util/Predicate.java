@@ -5,6 +5,12 @@ package codng.util;
  * @param <X> predicate domain
  */
 public interface Predicate<X> extends Function<X, Boolean> {
+
+	/**
+	 * Returns true if this predicate accepts x
+	 * @param x an object on which the predicate is asserted
+	 * @return true if this predicate accepts x
+	 */
 	boolean accepts(X x);
 
 	/**

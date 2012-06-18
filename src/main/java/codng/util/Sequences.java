@@ -232,7 +232,7 @@ public class Sequences {
 	}
 
 	/**
-	 * Return the concatenation of the specfied iterables
+	 * Return the concatenation of the specified iterables
 	 * @param a an iterable
 	 * @param b an iterable
 	 * @param <T> element type

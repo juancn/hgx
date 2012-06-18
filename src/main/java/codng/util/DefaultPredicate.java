@@ -28,6 +28,4 @@ public abstract class DefaultPredicate<X>
 	public final Predicate<X> or(final Predicate<X> other) {
 		return Predicates.or(this, other);
 	}
-
-
 }
