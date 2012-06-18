@@ -2,7 +2,10 @@ package codng.hgx;
 
 import codng.util.DefaultFunction;
 import codng.util.DefaultPredicate;
+import codng.util.Functions;
+import codng.util.Predicates;
 import codng.util.Sequence;
+import codng.util.Sequences;
 import codng.util.StopWatch;
 
 import java.io.BufferedReader;
@@ -18,11 +21,14 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.Formatter;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
 
+import static codng.util.Predicates.forAny;
 import static codng.util.Sequences.asSequence;
 import static codng.util.Sequences.reverse;
 
@@ -157,30 +163,19 @@ public class ChangeSet
 	}
 
 	private static List<ChangeSet> filterBranchOnly(final String branch, final Set<Id> inBranch, final List<ChangeSet> changeSets) {
-		// Group all changes belonging to the branch at the top
-		Collections.sort(changeSets, new Comparator<ChangeSet>() {
-			@Override
-			public int compare(ChangeSet o1, ChangeSet o2) {
-				final boolean b1 = matchBranch(branch, o1);
-				final boolean b2 = matchBranch(branch, o2);
-				if(b1 && !b2) return -1;
-				if(!b1 && b2) return  1;
-				return o2.id.seqNo - o1.id.seqNo;
-			}
-		});
-
 		if(changeSets.isEmpty()) return changeSets;
-		final List<ChangeSet> result = new ArrayList<>();
-		for (int i = 0; i < changeSets.size()-1; i++) {
-			final ChangeSet current = changeSets.get(i);
-			final ChangeSet next = changeSets.get(i+1);
-			if(!matchBranch(branch, next)) {
-				break;
-			}
-			current.parents.retainAll(inBranch);
-			result.add(current);
-		}
+		final List<ChangeSet> result = asSequence(changeSets)
+				.filter(new DefaultPredicate<ChangeSet>() {
+					@Override
+					public boolean accepts(ChangeSet changeSet) {
+						return matchBranch(branch, changeSet);
+					}
+				}).toList();
 
+		// Remove all unnecessary parents
+		for (ChangeSet changeSet : result) {
+			changeSet.parents.retainAll(inBranch);
+		}
 		return result;
 	}
 
@@ -259,7 +254,7 @@ public class ChangeSet
 	private static Sequence<String> filter(final List<Entry> entries, final String key) {
 		return asSequence(entries).filter(new DefaultPredicate<Entry>(){
 			@Override
-			public boolean apply(Entry entry) {
+			public boolean accepts(Entry entry) {
 				return entry.key.equals(key);
 			}
 		}).map(new DefaultFunction<Entry, String>(){

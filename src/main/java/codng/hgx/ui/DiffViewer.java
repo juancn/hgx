@@ -62,7 +62,7 @@ public abstract class DiffViewer<T>
 					diffModel.addHeader(this.data);
 					diffModel.addDiff(this.data, new DefaultPredicate<String>() {
 						@Override
-						public boolean apply(final String status) {
+						public boolean accepts(final String status) {
 							SwingUtilities.invokeLater(new Runnable() {
 								@Override
 								public void run() {
@@ -132,7 +132,7 @@ public abstract class DiffViewer<T>
 					++lineCount;
 					// Pick a nice prime so numbers are not all round
 					if(lineCount > 0 && lineCount % 1009 == 0) {
-						status.apply(String.format("Loading... (syntax highlighting, %s lines processed)", lineCount));
+						status.accepts(String.format("Loading... (syntax highlighting, %s lines processed)", lineCount));
 					}
 					if(line.startsWith("diff")) {
 						skipDiff = false;

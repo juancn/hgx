@@ -44,24 +44,24 @@ public class UtilTest {
 		final Predicate<Object> t = Predicates.alwaysTrue();
 		final Predicate<Object> f = Predicates.alwaysFalse();
 
-		assertTrue(t.apply(null));
-		assertFalse(f.apply(null));
+		assertTrue(t.accepts(null));
+		assertFalse(f.accepts(null));
 
-		assertTrue(t.or(t).apply(null));
-		assertTrue(t.or(f).apply(null));
-		assertTrue(f.or(t).apply(null));
-		assertFalse(f.or(f).apply(null));
+		assertTrue(t.or(t).accepts(null));
+		assertTrue(t.or(f).accepts(null));
+		assertTrue(f.or(t).accepts(null));
+		assertFalse(f.or(f).accepts(null));
 
-		assertTrue(t.and(t).apply(null));
-		assertFalse(t.and(f).apply(null));
-		assertFalse(f.and(t).apply(null));
-		assertFalse(f.and(f).apply(null));
+		assertTrue(t.and(t).accepts(null));
+		assertFalse(t.and(f).accepts(null));
+		assertFalse(f.and(t).accepts(null));
+		assertFalse(f.and(f).accepts(null));
 
-		assertTrue(f.not().apply(null));
-		assertFalse(t.not().apply(null));
+		assertTrue(f.not().accepts(null));
+		assertFalse(t.not().accepts(null));
 
-		assertFalse(Predicates.notNull().apply(null));
-		assertTrue(Predicates.notNull().apply(""));
+		assertFalse(Predicates.notNull().accepts(null));
+		assertTrue(Predicates.notNull().accepts(""));
 	}
 
 	@Test
@@ -103,7 +103,7 @@ public class UtilTest {
 
 	private static final Predicate<Integer> EVEN = new DefaultPredicate<Integer>() {
 		@Override
-		public boolean apply(Integer integer) {
+		public boolean accepts(Integer integer) {
 			return integer % 2 == 0;
 		}
 	};

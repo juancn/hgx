@@ -1,5 +1,12 @@
 package codng.util;
 
+import codng.hgx.ChangeSet;
+import codng.hgx.Id;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 /**
  * Utility methods to implement {@link Function}
  */
@@ -36,5 +43,21 @@ public class Functions {
 	 */
 	public static <T> Function<T,T> identity() {
 		return Cast.force(IDENTITY_CONST);
+	}
+
+	/**
+	 * Creates a map with the elements of the specified iterable grouped by the results of mapper.
+	 * @param elements elements to be processed
+	 * @param mapper key extraction function
+	 * @param <X> type of the elements
+	 * @param <Y> type of the key
+	 * @return a new map with the elements indexed by mapper(elements)
+	 */
+	public static <X,Y> Map<Y, X> toMap(Iterable<X> elements, Function<X, Y> mapper) {
+		final HashMap<Y, X> map = new HashMap<>();
+		for (X element : elements) {
+			map.put(mapper.apply(element), element);
+		}
+		return map;
 	}
 }

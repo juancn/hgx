@@ -48,4 +48,9 @@ public abstract class DefaultSequence<T> implements Sequence<T> {
 	public String toString() {
 		return Sequences.toString(this, "[", ", ", "]");
 	}
+
+	@Override
+	public Sequence<T> concat(Iterable<? extends T> other) {
+		return Sequences.concat(this, other);
+	}
 }

@@ -63,4 +63,11 @@ public interface Sequence<T>
 	 */
 	Sequence<T> limit(int limit);
 
+	/**
+	 * Returns the concatenation of this sequence and another.
+	 * @param other another iterable
+	 * @return the concatenation of both sequences
+	 */
+	Sequence<T> concat(Iterable<? extends T> other);
+
 }

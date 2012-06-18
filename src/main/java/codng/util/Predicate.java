@@ -4,8 +4,8 @@ package codng.util;
  * A predicate (i.e. a function that returns boolean values)
  * @param <X> predicate domain
  */
-public interface Predicate<X> {
-	boolean apply(X x);
+public interface Predicate<X> extends Function<X, Boolean> {
+	boolean accepts(X x);
 
 	/**
 	 * Negates this predicate
@@ -26,5 +26,4 @@ public interface Predicate<X> {
 	 * @return 'this || other'
 	 */
 	Predicate<X> or(Predicate<X> other);
-
 }

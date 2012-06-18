@@ -6,7 +6,14 @@ package codng.util;
  * @param <X> domain of the predicate
  */
 public abstract class DefaultPredicate<X>
+		extends DefaultFunction<X, Boolean>
 		implements Predicate<X> {
+
+	@Override
+	public Boolean apply(X x) {
+		return accepts(x);
+	}
+
 	@Override
 	public final Predicate<X> not() {
 		return Predicates.not(this);
@@ -21,4 +28,6 @@ public abstract class DefaultPredicate<X>
 	public final Predicate<X> or(final Predicate<X> other) {
 		return Predicates.or(this, other);
 	}
+
+
 }

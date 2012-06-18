@@ -66,7 +66,7 @@ public class Sequences {
 					protected T advance() {
 						while (it.hasNext()) {
 							final T next = it.next();
-							if(filter.apply(next)) return next;
+							if(filter.accepts(next)) return next;
 						}
 						return finished();
 					}
@@ -231,4 +231,29 @@ public class Sequences {
 		};
 	}
 
+	/**
+	 * Return the concatenation of the specfied iterables
+	 * @param a an iterable
+	 * @param b an iterable
+	 * @param <T> element type
+	 * @return a sequence of the concatenation of both iterables
+	 */
+	public static <T> Sequence<T> concat(final Iterable<T> a, final Iterable<? extends T> b) {
+		return new DefaultSequence<T>() {
+			@Override
+			public Iterator<T> iterator() {
+				return new NoRemoveIterator<T>() {
+					final Iterator<T> ait = a.iterator();
+					final Iterator<? extends T> bit = b.iterator();
+
+					@Override
+					protected T advance() {
+						if(ait.hasNext()) return ait.next();
+						else if(bit.hasNext()) return bit.next();
+						else return finished();
+					}
+				};
+			}
+		};
+	}
 }
