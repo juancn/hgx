@@ -425,6 +425,7 @@ public class JavaLexer
         reserved("strictfp",TokenType.STRICTFP);
         reserved("super",TokenType.SUPER);
         reserved("switch",TokenType.SWITCH);
+        reserved("synchronized",TokenType.SYNCHRONIZED);
         reserved("this",TokenType.THIS);
         reserved("throw",TokenType.THROW);
         reserved("throws",TokenType.THROWS);

@@ -93,6 +93,7 @@ public enum TokenType {
     STRING,
     SUPER,
     SWITCH,
+    SYNCHRONIZED,
     THIS,
     THROW,
     THROWS,
