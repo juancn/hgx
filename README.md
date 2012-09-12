@@ -3,7 +3,7 @@ HgX
 
 HgX is a Mercurial history viewer inspired by GitX. 
 
-!["JCarder repository screenshot"](hgx/blob/master/doc/jcarder.png?raw=true)
+!["JCarder repository screenshot"](https://raw.github.com/juancn/hgx/master/doc/jcarder.png)
 
 Overview
 -------
