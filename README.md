@@ -24,6 +24,7 @@ HgX maintains a cache in $HOME/.hgx. This directory can be removed at any time a
 
 At this point syntax highlighting is available only for Java, but it is possible to add more languages.
 
+
 Build & Usage
 -------------
 
@@ -57,3 +58,7 @@ License
 -------
 
 You have a perpetual license to do whatever you want with this code, but if you do something cool with it a note would be nice, oh! and if you make some money out of it, buy me a beer.
+
+Thanks
+------
+Special thanks to the creators of [JProfiler](http://www.ej-technologies.com/products/jprofiler/overview.html). It's a great tool to iron out any performance kinks out of your code.
