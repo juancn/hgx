@@ -5,15 +5,18 @@ import codng.util.CharSequenceComparator;
 
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.regex.Pattern;
 
 class CLikeColorizer extends LexingColorizer {
+
+	private static final Pattern RESERVED_LIKE = Pattern.compile("NS\\w+");
 
 	CLikeColorizer(final RichTextViewModel model) {
 		super(model);
 	}
 
 	public boolean isReserved(CharSequence word) {
-		return RESERVED.contains(word);
+		return RESERVED.contains(word) || RESERVED_LIKE.matcher(word).matches();
 	}
 
 	private static Set<CharSequence> RESERVED = new TreeSet<>(new CharSequenceComparator<CharSequence>());
@@ -24,58 +27,91 @@ class CLikeColorizer extends LexingColorizer {
 	}
 
 	static {
-		reserved("null");
-		reserved("true");
-		reserved("false");
-		reserved("abstract");
-		reserved("assert");
-		reserved("boolean");
+		reserved("alignas");
+		reserved("alignof");
+		reserved("and");
+		reserved("and_eq");
+		reserved("asm");
+		reserved("auto");
+		reserved("bitand");
+		reserved("bitor");
+		reserved("bool");
 		reserved("break");
-		reserved("byte");
 		reserved("case");
 		reserved("catch");
 		reserved("char");
+		reserved("char16_t");
+		reserved("char32_t");
 		reserved("class");
+		reserved("compl");
 		reserved("const");
+		reserved("constexpr");
+		reserved("const_cast");
 		reserved("continue");
+		reserved("decltype");
 		reserved("default");
+		reserved("delete");
 		reserved("do");
 		reserved("double");
+		reserved("dynamic_cast");
 		reserved("else");
-		reserved("extends");
-		reserved("final");
-		reserved("finally");
+		reserved("enum");
+		reserved("explicit");
+		reserved("export");
+		reserved("extern");
+		reserved("false");
 		reserved("float");
 		reserved("for");
+		reserved("friend");
 		reserved("goto");
 		reserved("if");
-		reserved("implements");
-		reserved("import");
-		reserved("instanceof");
+		reserved("inline");
 		reserved("int");
-		reserved("interface");
 		reserved("long");
-		reserved("native");
+		reserved("mutable");
+		reserved("namespace");
 		reserved("new");
-		reserved("package");
+		reserved("noexcept");
+		reserved("not");
+		reserved("not_eq");
+		reserved("nullptr");
+		reserved("operator");
+		reserved("or");
+		reserved("or_eq");
 		reserved("private");
 		reserved("protected");
 		reserved("public");
+		reserved("register");
+		reserved("reinterpret_cast");
 		reserved("return");
-		reserved("retry");
 		reserved("short");
+		reserved("signed");
+		reserved("sizeof");
 		reserved("static");
-		reserved("strictfp");
-		reserved("super");
+		reserved("static_assert");
+		reserved("static_cast");
+		reserved("struct");
 		reserved("switch");
-		reserved("synchronized");
+		reserved("template");
 		reserved("this");
+		reserved("thread_local");
 		reserved("throw");
-		reserved("throws");
-		reserved("transient");
+		reserved("true");
 		reserved("try");
+		reserved("typedef");
+		reserved("typeid");
+		reserved("typename");
+		reserved("union");
+		reserved("unsigned");
+		reserved("using");
+		reserved("virtual");
 		reserved("void");
 		reserved("volatile");
+		reserved("wchar_t");
 		reserved("while");
+		reserved("xor");
+		reserved("xor_eq");
+		// Other
+		reserved("BOOL");
 	}
 }

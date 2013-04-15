@@ -2,10 +2,12 @@ package codng.util;
 
 import java.util.Comparator;
 
+
+/** Comparator that orders {@link CharSequence}s in lexicographical order */
 public class CharSequenceComparator<T extends CharSequence>
 		implements Comparator<T>
 {
-
+	@Override
 	public int compare(T l, T r)
 	{
 		int llen = l.length();

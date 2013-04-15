@@ -9,6 +9,7 @@ public enum TextStyle {
 	COMMENT("comment") {{ monospaced().italic().foreground(Colors.COMMENT); }},
 	NUMBER("number") {{ monospaced().foreground(Colors.NUMBER); }},
 	KEYWORD("keyword") {{ monospaced().foreground(Colors.KEYWORD); }},
+	DIRECTIVE("directive") {{ monospaced().foreground(Colors.DIRECTIVE); }},
 	ANNOTATION("annotation") {{ monospaced().foreground(Colors.ANNOTATION); }},
 	CODE("code") {{ monospaced(); }},
 	LINK("link") {{ underline().foreground(Colors.LINK); }},

@@ -143,8 +143,13 @@ public abstract class DiffViewer<T>
 							final Strip fileLine = line().add(align(text(file).vgap(10).bold(), richTextView.getParent().getWidth() - 50).background(Colors.FILE_BG));
 							addFileHeader(lineCount, file, fileLine);
 
-							if(file.endsWith(".java")) {
+							if(file.endsWith(".java") || file.endsWith(".js")) {
 								colorizer = new JavaColorizer(this);
+							} else if(file.endsWith(".m")    || file.endsWith(".mm")
+									|| file.endsWith(".c")   || file.endsWith(".h")
+									|| file.endsWith(".cpp") || file.endsWith(".hpp")
+									) {
+								colorizer = new CLikeColorizer(this);
 							} else {
 								colorizer = Colorizer.plain(this);
 							}     

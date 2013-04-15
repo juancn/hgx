@@ -48,10 +48,16 @@ public class JavaLexer
             unread();
             if(isIdStart(c)) {
                 token = parseId();
+			} else if(c == '#') {
+				token = parseAnnotation(TokenType.DIRECTIVE);
 			} else if(c == '@') {
-				token = parseAnnotation();
+				if( read() == '"' ) {
+					token = parseString(TokenType.AT_STRING);
+				} else {
+					token = parseAnnotation(TokenType.ANNOTATION);
+				}
             } else if(c == '"') {
-                token = parseString();
+                token = parseString(TokenType.STRING);
             } else {
                 TokenType ttype = parseMultichar(c);
                 if(ttype == null) {
@@ -65,7 +71,7 @@ public class JavaLexer
         return token;
     }
 
-	private JavaToken parseAnnotation() {
+	private JavaToken parseAnnotation(TokenType ttype) {
 		JavaToken token;
 		read();
 		char c = read();
@@ -73,11 +79,11 @@ public class JavaLexer
 			c = read();
 		}
 		unread();
-		token = makeToken(TokenType.ANNOTATION);
+		token = makeToken(ttype);
 		return token;
 	}
 
-	private JavaToken parseString() throws ParseException
+	private JavaToken parseString(TokenType ttype) throws ParseException
     {
         char c = read();
         loop: while(c != '"') {
@@ -117,7 +123,7 @@ public class JavaLexer
 			c = read();
         }
         if(c != '"') unread();
-        return makeToken(TokenType.STRING);
+        return makeToken(ttype);
     }
 
     private TokenType parseMultichar(char c)
@@ -241,22 +247,8 @@ public class JavaLexer
             c = read();
         }
         unread();
-        return makeToken(checkReserved());
+		return makeToken(TokenType.ID);
     }
-
-    private TokenType checkReserved()
-    {
-        CharSequence id = text.subSequence(tokenStart, offset);
-        final TokenType ttype = RESERVED.get(id);
-        if(ttype != null) {
-            return ttype;
-        }
-        return TokenType.ID;
-    }
-	
-	public static boolean isReserved(CharSequence word) {
-		return RESERVED.containsKey(word);
-	} 
 
     private boolean isIdPart(char c)
     {
@@ -373,88 +365,4 @@ public class JavaLexer
     }
 
     private static final char EOF = '\uFFFF';
-    private static Map<CharSequence, TokenType> RESERVED = new TreeMap<>(new CharSequenceComparator<CharSequence>());
-
-    private static void reserved(CharSequence id, TokenType ttype)
-    {
-        RESERVED.put(id, ttype);
-    }
-
-    static {
-        reserved("null", TokenType.NULL);
-        reserved("true", TokenType.TRUE);
-        reserved("false", TokenType.FALSE);
-        reserved("abstract",TokenType.ABSTRACT);
-        reserved("assert",TokenType.ASSERT);
-        reserved("boolean",TokenType.BOOLEAN);
-        reserved("break",TokenType.BREAK);
-        reserved("byte",TokenType.BYTE);
-        reserved("case",TokenType.CASE);
-        reserved("catch",TokenType.CATCH);
-        reserved("char",TokenType.CHAR);
-        reserved("class",TokenType.CLASS);
-        reserved("const",TokenType.CONST);
-        reserved("continue",TokenType.CONTINUE);
-        reserved("default",TokenType.DEFAULT);
-        reserved("do",TokenType.DO);
-        reserved("double",TokenType.DOUBLE);
-        reserved("else",TokenType.ELSE);
-        reserved("extends",TokenType.EXTENDS);
-        reserved("final",TokenType.FINAL);
-        reserved("finally",TokenType.FINALLY);
-        reserved("float",TokenType.FLOAT);
-        reserved("for",TokenType.FOR);
-        reserved("goto",TokenType.GOTO);
-        reserved("if",TokenType.IF);
-        reserved("implements",TokenType.IMPLEMENTS);
-        reserved("import",TokenType.IMPORT);
-        reserved("instanceof",TokenType.INSTANCEOF);
-        reserved("int",TokenType.INT);
-        reserved("interface",TokenType.INTERFACE);
-        reserved("long",TokenType.LONG);
-        reserved("native",TokenType.NATIVE);
-        reserved("new",TokenType.NEW);
-        reserved("package",TokenType.PACKAGE);
-        reserved("private",TokenType.PRIVATE);
-        reserved("protected",TokenType.PROTECTED);
-        reserved("public",TokenType.PUBLIC);
-        reserved("return",TokenType.RETURN);
-        reserved("retry",TokenType.RETRY);
-        reserved("short",TokenType.SHORT);
-        reserved("static",TokenType.STATIC);
-        reserved("strictfp",TokenType.STRICTFP);
-        reserved("super",TokenType.SUPER);
-        reserved("switch",TokenType.SWITCH);
-        reserved("synchronized",TokenType.SYNCHRONIZED);
-        reserved("this",TokenType.THIS);
-        reserved("throw",TokenType.THROW);
-        reserved("throws",TokenType.THROWS);
-        reserved("transient",TokenType.TRANSIENT);
-        reserved("try",TokenType.TRY);
-        reserved("void",TokenType.VOID);
-        reserved("volatile",TokenType.VOLATILE);
-        reserved("while",TokenType.WHILE);
-    }
-
-    private static class CharSequenceComparator<T extends CharSequence>
-            implements Comparator<T>
-    {
-
-        public int compare(T l, T r)
-        {
-            int llen = l.length();
-            int rlen = r.length();
-            int n = Math.min(llen, rlen);
-            for(int i = 0; i < n; i++) {
-                char c1 = l.charAt(i);
-                char c2 = r.charAt(i);
-                if (c1 != c2) {
-                    return c1 - c2;
-                }
-            }
-            return llen - rlen;
-        }
-    }
-
-
 }

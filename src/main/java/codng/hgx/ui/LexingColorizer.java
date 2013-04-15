@@ -1,15 +1,15 @@
 package codng.hgx.ui;
 
 import codng.hgx.ui.rtext.RichTextViewModel;
-import codng.hgx.ui.rtext.Text;
 import codng.hgx.ui.rtext.Strip;
+import codng.hgx.ui.rtext.Text;
 
 import java.text.ParseException;
 import java.util.Comparator;
 import java.util.Set;
 import java.util.TreeSet;
 
-class LexingColorizer extends Colorizer {
+abstract class LexingColorizer extends Colorizer {
 
 	private boolean unterminatedComment;
 	LexingColorizer(final RichTextViewModel model) {
@@ -56,10 +56,12 @@ class LexingColorizer extends Colorizer {
 					token = comment(text);
 				} else if (tokenType == TokenType.SL_COMMENT) {
 					token = comment(text);
-				} else if (tokenType == TokenType.STRING || tokenType == TokenType.CHAR_LITERAL) {
+				} else if (tokenType == TokenType.STRING || tokenType == TokenType.CHAR_LITERAL || tokenType == TokenType.AT_STRING) {
 					token = string(text);
 				} else if (tokenType == TokenType.ANNOTATION) {
 					token = annotation(text);
+				} else if (tokenType == TokenType.DIRECTIVE) {
+					token = directive(text);
 				} else if (tokenType == TokenType.INT_LITERAL
 						|| tokenType == TokenType.LONG_LITERAL
 						|| tokenType == TokenType.FLOAT_LITERAL
@@ -98,6 +100,10 @@ class LexingColorizer extends Colorizer {
 		return TextStyle.ANNOTATION.applyTo(gapless(text));
 	}
 
+	private Text directive(CharSequence text) {
+		return TextStyle.DIRECTIVE.applyTo(gapless(text));
+	}
+
 	private Text string(CharSequence text) {
 		return TextStyle.STRING_LITERAL.applyTo(gapless(text));
 	}
@@ -114,90 +120,5 @@ class LexingColorizer extends Colorizer {
 		return model.strip();
 	}
 
-	public boolean isReserved(CharSequence word) {
-		return RESERVED.contains(word);
-	}
-
-	private static Set<CharSequence> RESERVED = new TreeSet<>(new CharSequenceComparator<CharSequence>());
-
-	private static void reserved(CharSequence id)
-	{
-		RESERVED.add(id);
-	}
-
-	static {
-		reserved("null");
-		reserved("true");
-		reserved("false");
-		reserved("abstract");
-		reserved("assert");
-		reserved("boolean");
-		reserved("break");
-		reserved("byte");
-		reserved("case");
-		reserved("catch");
-		reserved("char");
-		reserved("class");
-		reserved("const");
-		reserved("continue");
-		reserved("default");
-		reserved("do");
-		reserved("double");
-		reserved("else");
-		reserved("extends");
-		reserved("final");
-		reserved("finally");
-		reserved("float");
-		reserved("for");
-		reserved("goto");
-		reserved("if");
-		reserved("implements");
-		reserved("import");
-		reserved("instanceof");
-		reserved("int");
-		reserved("interface");
-		reserved("long");
-		reserved("native");
-		reserved("new");
-		reserved("package");
-		reserved("private");
-		reserved("protected");
-		reserved("public");
-		reserved("return");
-		reserved("retry");
-		reserved("short");
-		reserved("static");
-		reserved("strictfp");
-		reserved("super");
-		reserved("switch");
-		reserved("synchronized");
-		reserved("this");
-		reserved("throw");
-		reserved("throws");
-		reserved("transient");
-		reserved("try");
-		reserved("void");
-		reserved("volatile");
-		reserved("while");
-	}
-
-	private static class CharSequenceComparator<T extends CharSequence>
-			implements Comparator<T>
-	{
-
-		public int compare(T l, T r)
-		{
-			int llen = l.length();
-			int rlen = r.length();
-			int n = Math.min(llen, rlen);
-			for(int i = 0; i < n; i++) {
-				char c1 = l.charAt(i);
-				char c2 = r.charAt(i);
-				if (c1 != c2) {
-					return c1 - c2;
-				}
-			}
-			return llen - rlen;
-		}
-	}
+	public abstract boolean isReserved(CharSequence word);
 }

@@ -11,6 +11,7 @@ public class Colors {
 	public static final Color ANNOTATION = color("annotation",128, 128, 0);
 	public static final Color NUMBER = color("number",0, 0, 255);
 	public static final Color KEYWORD = color("keyword",0, 0, 128);
+	public static final Color DIRECTIVE = color("directive",0, 0, 128);
 
 	// Informational
 	public static final Color WARNING = color("warning",255, 0, 0);
