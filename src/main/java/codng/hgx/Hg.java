@@ -77,7 +77,7 @@ public class Hg {
 	}
 
 	static AsyncCommand log(int since) throws IOException, InterruptedException {
-		return new AsyncCommand("hg", "log", "-r", since +":").invoke();
+		return new AsyncCommand("hg", "--config", "defaults.log=", "log", "-r", since +":").invoke();
 	}
 
 	static AsyncCommand diff(String rev) throws IOException, InterruptedException {

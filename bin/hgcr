@@ -8,7 +8,7 @@ if [ -z "$HGX_JAVA" ]; then
 else
 	JAVA="$HGX_JAVA"
 fi
-"$JAVA" $HGX_JAVA_OPTIONS -cp $JAR_FILE -ea codng.hgx.ui.DiffFrame -r "ancestor(max(branch(trunk)),max(branch($1)))" -r $1
+"$JAVA" $HGX_JAVA_OPTIONS -cp $JAR_FILE -ea codng.hgx.ui.DiffFrame -w -r "ancestor(max(branch(trunk)),max(branch($1)))" -r $1
 
 
 
