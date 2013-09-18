@@ -29,6 +29,7 @@ class JavaColorizer extends LexingColorizer {
 		reserved("false");
 		reserved("abstract");
 		reserved("assert");
+		reserved("enum");
 		reserved("boolean");
 		reserved("break");
 		reserved("byte");
