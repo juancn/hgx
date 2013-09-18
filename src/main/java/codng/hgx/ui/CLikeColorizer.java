@@ -115,6 +115,8 @@ class CLikeColorizer extends LexingColorizer {
 		reserved("BOOL");
 
 		// Thrift
+		reserved("throws");
+		reserved("required");
 		reserved("optional");
 		reserved("service");
 		reserved("exception");
@@ -123,5 +125,16 @@ class CLikeColorizer extends LexingColorizer {
 		reserved("i16");
 		reserved("i32");
 		reserved("i64");
+		reserved("binary");
+		reserved("slist");
+		reserved("list");
+		reserved("cpp_type");
+		reserved("include");
+		reserved("set");
+		reserved("map");
+		reserved("php_namespace");
+		reserved("xsd_namespace");
+		reserved("senum");
+		reserved("xsd_all");
 	}
 }
