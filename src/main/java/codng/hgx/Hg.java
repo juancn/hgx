@@ -12,6 +12,8 @@ import java.io.InputStreamReader;
 import java.io.InterruptedIOException;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.concurrent.Callable;

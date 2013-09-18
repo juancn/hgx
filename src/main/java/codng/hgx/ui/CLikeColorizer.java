@@ -113,5 +113,15 @@ class CLikeColorizer extends LexingColorizer {
 		reserved("xor_eq");
 		// Other
 		reserved("BOOL");
+
+		// Thrift
+		reserved("optional");
+		reserved("service");
+		reserved("exception");
+		reserved("string");
+		reserved("byte");
+		reserved("i16");
+		reserved("i32");
+		reserved("i64");
 	}
 }
