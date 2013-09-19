@@ -148,9 +148,10 @@ public abstract class DiffViewer<T>
 							} else if(file.endsWith(".m")    || file.endsWith(".mm")
 									|| file.endsWith(".c")   || file.endsWith(".h")
 									|| file.endsWith(".cpp") || file.endsWith(".hpp")
-									|| file.endsWith(".thrift")
 									) {
 								colorizer = new CLikeColorizer(this);
+							} else if (file.endsWith(".thrift")) {
+								colorizer = new ThriftColorizer(this);
 							} else {
 								colorizer = Colorizer.plain(this);
 							}     

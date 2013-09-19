@@ -1,13 +1,6 @@
 package codng.hgx.ui.rtext;
 
-import codng.hgx.ui.rtext.Block;
 import codng.hgx.ui.rtext.RichTextView.BlockVisitor;
-import codng.hgx.ui.rtext.Gap;
-import codng.hgx.ui.rtext.HBox;
-import codng.hgx.ui.rtext.HRuler;
-import codng.hgx.ui.rtext.Link;
-import codng.hgx.ui.rtext.Strip;
-import codng.hgx.ui.rtext.Text;
 
 import java.awt.Color;
 import java.io.PrintWriter;

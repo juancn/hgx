@@ -1,6 +1,5 @@
 package codng.hgx.ui.rtext;
 
-import codng.hgx.ui.rtext.HtmlTransform;
 import codng.util.Tuple;
 
 import javax.swing.Action;

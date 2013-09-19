@@ -16,17 +16,16 @@ class CLikeColorizer extends LexingColorizer {
 	}
 
 	public boolean isReserved(CharSequence word) {
-		return RESERVED.contains(word) || RESERVED_LIKE.matcher(word).matches();
+		return reserved.contains(word) || RESERVED_LIKE.matcher(word).matches();
 	}
 
-	private static Set<CharSequence> RESERVED = new TreeSet<>(new CharSequenceComparator<CharSequence>());
+	private final Set<CharSequence> reserved = new TreeSet<>(new CharSequenceComparator<CharSequence>());
 
-	private static void reserved(CharSequence id)
+	protected void reserved(CharSequence id) {
+		reserved.add(id);
+	}
+
 	{
-		RESERVED.add(id);
-	}
-
-	static {
 		reserved("alignas");
 		reserved("alignof");
 		reserved("and");
