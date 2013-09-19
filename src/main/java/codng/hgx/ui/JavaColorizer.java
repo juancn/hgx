@@ -78,5 +78,7 @@ class JavaColorizer extends LexingColorizer {
 		reserved("void");
 		reserved("volatile");
 		reserved("while");
+		// Javascript
+		reserved("var");
 	}
 }

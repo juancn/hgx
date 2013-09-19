@@ -1,9 +1,6 @@
 package codng.hgx.ui;
 
 import java.text.ParseException;
-import java.util.Comparator;
-import java.util.Map;
-import java.util.TreeMap;
 
 
 public class JavaLexer
@@ -52,12 +49,14 @@ public class JavaLexer
 				token = parseAnnotation(TokenType.DIRECTIVE);
 			} else if(c == '@') {
 				if( read() == '"' ) {
-					token = parseString(TokenType.AT_STRING);
+					token = parseString(TokenType.AT_STRING, '"');
 				} else {
 					token = parseAnnotation(TokenType.ANNOTATION);
 				}
             } else if(c == '"') {
-                token = parseString(TokenType.STRING);
+                token = parseString(TokenType.STRING, '"');
+            } else if(c == '\'') {
+                token = parseString(TokenType.STRING, '\'');
             } else {
                 TokenType ttype = parseMultichar(c);
                 if(ttype == null) {
@@ -83,46 +82,24 @@ public class JavaLexer
 		return token;
 	}
 
-	private JavaToken parseString(TokenType ttype) throws ParseException
+	private JavaToken parseString(TokenType ttype, char terminator) throws ParseException
     {
         char c = read();
-        loop: while(c != '"') {
+        loop: while(c != terminator) {
             switch(c) {
             case '\\':
-                c = read();
-                switch(c) {
-                case '\\':
-                case '"':
-                case '\'':
-                case 'b':
-                case 't':
-                case 'n':
-                case 'f':
-                case 'r':
-                case '0':
-                case '1':
-                case '2':
-                case '3':
-                case '4':
-                case '5':
-                case '6':
-                case '7':
-                case 'u': // TODO: these are not properly parsed, but it's unnecessary for syntax highlighting
-                    break;
-                default:
-                    throw new ParseException("Unrecognized escape sequence", -1);
-                }
+				// Just skip the next char. For syntax highlighting is enough.
+                read();
                 break;
             case '\n':
             case '\r':
             case EOF:
-//                throw new ParseException("Unterminated string constant", -1);
 				// Just terminate it
                 break loop;
             }
 			c = read();
         }
-        if(c != '"') unread();
+        if(c != terminator) unread();
         return makeToken(ttype);
     }
 
