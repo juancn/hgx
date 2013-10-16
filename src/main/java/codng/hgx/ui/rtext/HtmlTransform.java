@@ -55,7 +55,7 @@ public class HtmlTransform
 	public void visit(Strip strip) {
 
 		boolean hasBackground = !strip.getBackgroundColor(false).equals(Color.WHITE);
-		if(hasBackground) pw.printf("<span style=\"background-color:%s;\"", rgb(strip.getBackgroundColor(false)));
+		if(hasBackground) pw.printf("<span style=\"background-color:%s;\">", rgb(strip.getBackgroundColor(false)));
 		for (Block block : strip.blocks()) {
 			block.visit(this);
 		}
