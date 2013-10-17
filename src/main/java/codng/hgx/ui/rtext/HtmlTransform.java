@@ -6,6 +6,7 @@ import java.awt.Color;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 
+/** Transforms a block into HTML */
 public class HtmlTransform
 		implements BlockVisitor
 {

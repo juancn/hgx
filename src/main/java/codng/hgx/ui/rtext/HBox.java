@@ -2,8 +2,11 @@ package codng.hgx.ui.rtext;
 
 import codng.hgx.ui.rtext.RichTextView.BlockVisitor;
 
+/** A block that horizontally aligns another block */
 public class HBox extends Container<HBox> {
+	/** The type of alignment */
 	private Align align = Align.LEFT;
+	/** The width of the block */
 	private float width;
 
 	HBox(Block block, float width) {
@@ -12,16 +15,28 @@ public class HBox extends Container<HBox> {
 		opaque = true;
 	}
 
+	/**
+	 * Make this block right-aligned
+	 * @return this {@link Block} for chaining
+	 */
 	public HBox right() {
 		align = Align.RIGHT;
 		return this;
 	}
 
+	/**
+	 * Make this block left-aligned
+	 * @return this {@link Block} for chaining
+	 */
 	public HBox left() {
 		align = Align.LEFT;
 		return this;
 	}
 
+	/**
+	 * Make this block centered
+	 * @return this {@link Block} for chaining
+	 */
 	public HBox center() {
 		align = Align.CENTER;
 		return this;
@@ -54,6 +69,7 @@ public class HBox extends Container<HBox> {
 	@Override
 	public void visit(BlockVisitor visitor) { visitor.visit(this); }
 
+	/** @return this block's alignment */
 	public Align align() {
 		return align;
 	}

@@ -5,10 +5,13 @@ import codng.hgx.ui.rtext.RichTextView.BlockVisitor;
 import java.awt.Graphics2D;
 import java.awt.geom.Line2D;
 
+/** A horizontal ruler, used as a separator */
 public class HRuler extends Block<HRuler> {
-
+	/** Height */
 	private final float height = 10;
+	/** Width */
 	private final float width;
+	/** Padding */
 	private final float hpad = 50;
 
 	HRuler(RichTextView richTextView, float width) {

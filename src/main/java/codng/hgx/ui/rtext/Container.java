@@ -3,7 +3,9 @@ package codng.hgx.ui.rtext;
 import java.awt.Color;
 import java.awt.Graphics2D;
 
+/** Base class for blocks that contain and modify another block */
 public abstract class Container<T extends Container> extends Block<T> {
+	/** The contained block */
 	public final Block block;
 
 	Container(Block block) {

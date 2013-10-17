@@ -2,10 +2,12 @@ package codng.hgx.ui.rtext;
 
 import codng.hgx.ui.rtext.RichTextView.BlockVisitor;
 
+/** A block that represents a horizontal gap */
 public class Gap extends Block<Block> {
+	/** The gap */
 	private final int gap;
 
-	public Gap(RichTextView richTextView, int gap) {
+	Gap(RichTextView richTextView, int gap) {
 		super(richTextView);
 		this.gap = gap;
 	}
