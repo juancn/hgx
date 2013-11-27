@@ -299,7 +299,7 @@ public class JavaLexer
 
     private boolean isDigit(char c, int radix)
     {
-        return c != EOF && Character.digit(c, radix) != -1;
+        return c != EOF && (Character.digit(c, radix) != -1 || c == '_');
     }
 
     void skipWhiteSpace()
