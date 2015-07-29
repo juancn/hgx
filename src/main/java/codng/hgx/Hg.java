@@ -4,6 +4,7 @@ import codng.util.Command;
 import codng.util.DefaultSequence;
 import codng.util.NoRemoveIterator;
 import codng.util.Sequence;
+import codng.util.Sequences;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -14,6 +15,7 @@ import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.text.ParseException;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.concurrent.Callable;
@@ -80,6 +82,10 @@ public class Hg {
 
 	static AsyncCommand log(int since) throws IOException, InterruptedException {
 		return new AsyncCommand("hg", "--config", "defaults.log=", "log", "-r", since +":").invoke();
+	}
+
+	public static java.util.List<ChangeSet> log(String revSet) throws IOException, InterruptedException, ParseException {
+		return Sequences.reverse(ChangeSet.loadFrom(new AsyncCommand("hg", "--config", "defaults.log=", "log", "-r", revSet).invoke().getOutput())).toList();
 	}
 
 	static AsyncCommand diff(String rev) throws IOException, InterruptedException {

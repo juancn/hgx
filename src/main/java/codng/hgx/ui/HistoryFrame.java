@@ -147,6 +147,7 @@ public class HistoryFrame
 		private final String[] args;
 		private int next;
 		private List<String> arguments = new ArrayList<>();
+		private String revSet;
 		private String branch;
 		private boolean branchOnly;
 
@@ -194,6 +195,11 @@ public class HistoryFrame
 					branch = la();
 					consume();
 					break;
+				case "-r": case "--rev":
+					consume();
+					revSet = la();
+					consume();
+					break;
 				case "-B": case "--branch-only":
 					consume();
 					branchOnly = true;
@@ -217,14 +223,20 @@ public class HistoryFrame
 
 	public static void main(String[] args) throws Exception {
 		final CommandLine cmdLine = new CommandLine(args).parse();
-		
+
 		if(!cmdLine.getArguments().isEmpty()) {
 			usage();
 			System.exit(1);
 		}
 
 		final String branch = cmdLine.getBranch() == null ? Hg.branch() : cmdLine.getBranch();
-		final List<ChangeSet> changeSets = ChangeSet.filterBranch(branch, ChangeSet.loadFromCurrentDirectory(), cmdLine.isBranchOnly());
+		final List<ChangeSet> changeSets;
+		if (cmdLine.revSet == null) {
+			changeSets = ChangeSet.filterBranch(branch, ChangeSet.loadFromCurrentDirectory(), cmdLine.isBranchOnly());
+		} else {
+			changeSets = Hg.log(cmdLine.revSet);
+		}
+
 		final HistoryFrame historyFrame = new HistoryFrame(branch, Row.fromChangeSets(changeSets).iterator());
 		historyFrame.doShow();
 	}

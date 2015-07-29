@@ -15,7 +15,7 @@ else
 	BASE="$2"
 fi
 
-"$JAVA" $HGX_JAVA_OPTIONS -cp $JAR_FILE -ea codng.hgx.ui.DiffFrame -w -r "ancestor(max(branch($BASE)),max(branch($1)))" -r $1
+"$JAVA" $HGX_JAVA_OPTIONS -cp $JAR_FILE -ea codng.hgx.ui.DiffFrame -w -r "ancestor(max(branch('$BASE')),max(branch('$1')))" -r "$1"
 
 
 

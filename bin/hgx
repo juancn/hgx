@@ -8,6 +8,6 @@ if [ -z "$HGX_JAVA" ]; then
 else
 	JAVA="$HGX_JAVA"
 fi
-"$JAVA" $HGX_JAVA_OPTIONS -cp $JAR_FILE -ea codng.hgx.ui.HistoryFrame $@
+"$JAVA" $HGX_JAVA_OPTIONS -cp $JAR_FILE -ea codng.hgx.ui.HistoryFrame "$@"
 
 

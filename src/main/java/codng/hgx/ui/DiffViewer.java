@@ -256,5 +256,5 @@ public abstract class DiffViewer<T>
 	}
 
 	private static Pattern DIFF_PATTERN = Pattern.compile("diff --git a/(.*) b/(.*)");
-	private static Pattern HUNK_PATTERN = Pattern.compile("@@ -(\\d+),(\\d+) \\+(\\d+),(\\d+) @@.*");
+	private static Pattern HUNK_PATTERN = Pattern.compile("@@ -(\\d+)(?:,(\\d+))? \\+(\\d+)(?:,(\\d+))? @@.*");
 }
