@@ -246,7 +246,10 @@ public class JavaLexer
 
         if(c == '0') {
             c = read();
-            if(c == 'x' || c == 'X') {
+            if(c == 'b' || c == 'B') {
+            	radix = 2;
+            	c = read();
+			} else if(c == 'x' || c == 'X') {
                 radix = 16;
                 c = read();
             } else if(c == '.') {
@@ -256,7 +259,7 @@ public class JavaLexer
             }
         }
 
-        while(isDigit(c, radix)) {
+        while(isDigit(c, radix) || c == '_') {
             c = read();
         }
 
