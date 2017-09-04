@@ -1,0 +1,4 @@
+#!/bin/bash
+set -e 
+#Ask git for a diff, but render it with hgdiff
+git diff -w $@ | hgdiff --stdin
