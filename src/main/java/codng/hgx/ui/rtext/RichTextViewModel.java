@@ -54,4 +54,8 @@ public class RichTextViewModel<V extends RichTextView> {
 	public Text text(Object value) {
 		return new Text(richTextView, String.valueOf(value));
 	}
+
+	public List<Strip> getLines() {
+		return lines;
+	}
 }

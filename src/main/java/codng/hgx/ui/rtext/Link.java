@@ -3,7 +3,7 @@ package codng.hgx.ui.rtext;
 import codng.hgx.ui.rtext.RichTextView.BlockVisitor;
 
 public class Link extends Container<Link> {
-	private final Block anchor;
+	public final Block anchor;
 
 	public Link(final Block block, final Block anchor) {
 		super(block);

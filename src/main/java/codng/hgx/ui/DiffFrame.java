@@ -1,7 +1,11 @@
 package codng.hgx.ui;
 
 import codng.hgx.Cache;
+import codng.hgx.ui.DiffViewer.DiffModel;
+import codng.hgx.ui.rtext.HtmlTransform;
+import codng.hgx.ui.rtext.Strip;
 import codng.util.Command;
+import codng.util.Predicates;
 
 import javax.swing.JFrame;
 import javax.swing.JScrollPane;
@@ -107,7 +111,13 @@ public class DiffFrame
 
 	public static void main(String[] args) throws Exception {
 		final String diff;
-		if (args.length > 0 && "--stdin".equals(args[0])) {
+		if (args.length > 0 && "--html".equals(args[0])) {
+			final StringWriter sw = new StringWriter();
+			Cache.transfer(Cache.readText(System.in), sw);
+			diff = sw.toString();
+			System.out.println(diffToHtml(diff));
+			return;
+		} else if (args.length > 0 && "--stdin".equals(args[0])) {
 			final StringWriter sw = new StringWriter();
 			Cache.transfer(Cache.readText(System.in), sw);
 			diff = sw.toString();
@@ -120,6 +130,22 @@ public class DiffFrame
 		}
 		final DiffFrame historyFrame = new DiffFrame("", diff);
 		historyFrame.doShow();
+	}
+
+	public static String diffToHtml(String diff) {
+		final DiffViewer<String> view = new DiffViewer<String>() {
+			@Override
+			protected BufferedReader loadDiff(String data) throws IOException, InterruptedException {
+				throw new UnsupportedOperationException();
+			}
+		};
+		final DiffModel<String> model = view.createModel();
+		model.colorize(new BufferedReader(new StringReader(diff)), Predicates.alwaysTrue());
+		final HtmlTransform html = new HtmlTransform();
+		for (Strip line : model.getLines()) {
+			html.visitLine(line);
+		}
+		return html.toString();
 	}
 
 	private static final Preferences PREFERENCES = Preferences.userNodeForPackage(DiffFrame.class);

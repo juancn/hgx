@@ -10,6 +10,7 @@ import codng.util.DefaultPredicate;
 import codng.util.Predicate;
 
 import javax.swing.SwingUtilities;
+import java.awt.Container;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
@@ -121,7 +122,7 @@ public abstract class DiffViewer<T>
 			hr();
 		}
 
-		private void colorize(final BufferedReader br, final Predicate<String> status) {
+		protected void colorize(final BufferedReader br, final Predicate<String> status) {
 			try {
 				int oldStart = -1, newStart = -1;
 
@@ -140,7 +141,7 @@ public abstract class DiffViewer<T>
 						if (matcher.matches()) {
 							final String file = matcher.group(2);
 
-							final Strip fileLine = line().add(align(text(file).vgap(10).bold(), richTextView.getParent().getWidth() - 50).background(Colors.FILE_BG));
+							final Strip fileLine = line().add(align(text(file).vgap(10).bold(), getWindowWidth() - 50).background(Colors.FILE_BG));
 							addFileHeader(lineCount, file, fileLine);
 
 							if(file.endsWith(".java") || file.endsWith(".js")) {
@@ -202,6 +203,11 @@ public abstract class DiffViewer<T>
 					// Ignore
 				}
 			}
+		}
+
+		private int getWindowWidth() {
+			Container parent = richTextView.getParent();
+			return parent == null ? 1280 : parent.getWidth();
 		}
 
 		protected Strip numbered(int oldStart, int newStart, Block block) {
